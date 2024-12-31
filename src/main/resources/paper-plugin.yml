@@ -1,4 +1,0 @@
-name: PowerfulFireworks
-version: '${version}'
-main: org.eu.pcraft.powerfulfireworks.PowerfulFireworks
-api-version: '1.17'

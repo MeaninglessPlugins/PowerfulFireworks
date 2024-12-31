@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'io.papermc.paperweight.userdev' version "2.0.0-beta.9"
+    id 'net.minecrell.plugin-yml.bukkit' version '0.6.0'
 }
 
 group = 'org.eu.pcraft'
@@ -16,14 +16,13 @@ repositories {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
-
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.19-R0.1-SNAPSHOT")
+    compileOnly "io.papermc.paper:paper-api:1.17.1-R0.1-SNAPSHOT"
 }
 
-def targetJavaVersion = 17
+def targetJavaVersion = 16
 java {
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)
     sourceCompatibility = javaVersion
@@ -41,15 +40,8 @@ tasks.withType(JavaCompile).configureEach {
     }
 }
 
-processResources {
-    def props = [version: version]
-    inputs.properties props
-    filteringCharset 'UTF-8'
-    filesMatching('paper-plugin.yml') {
-        expand props
-    }
-}
-
-tasks.assemble {
-    dependsOn(tasks.reobfJar)
+bukkit {
+    name = "PowerfulFireworks"
+    main = "org.eu.pcraft.powerfulfireworks.PowerfulFireworks"
+    apiVersion = "1.19"
 }
