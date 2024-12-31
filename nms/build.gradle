@@ -1,0 +1,8 @@
+dependencies {
+    api project(":nms:common")
+    implementation project(":nms:v1_21_4")
+}
+
+compileJava {
+    options.release = 17
+}

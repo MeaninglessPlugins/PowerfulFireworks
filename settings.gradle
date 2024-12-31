@@ -7,3 +7,7 @@ pluginManagement {
     }
 }
 rootProject.name = 'PowerfulFireworks'
+
+include ":nms"
+include ":nms:common"
+include ":nms:v1_21_4"
