@@ -42,6 +42,7 @@ allprojects {
         annotationProcessor 'org.projectlombok:lombok:1.18.36'
         testCompileOnly 'org.projectlombok:lombok:1.18.36'
         testAnnotationProcessor 'org.projectlombok:lombok:1.18.36'
+        implementation 'org.spongepowered:configurate-yaml:4.1.2'
     }
 }
 

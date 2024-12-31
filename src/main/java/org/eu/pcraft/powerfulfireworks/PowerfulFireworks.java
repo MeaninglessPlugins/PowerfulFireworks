@@ -5,8 +5,11 @@ import org.bukkit.Bukkit;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.eu.pcraft.powerfulfireworks.commands.TestCommand;
+import org.eu.pcraft.powerfulfireworks.config.ConfigManager;
 import org.eu.pcraft.powerfulfireworks.nms.NMSSelector;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSProvider;
+
+import java.nio.file.Path;
 
 public final class PowerfulFireworks extends JavaPlugin {
     @Getter
@@ -15,8 +18,14 @@ public final class PowerfulFireworks extends JavaPlugin {
     @Getter
     private NMSProvider nms;
 
+    ConfigManager configManager;
+
     @Override
     public void onLoad() {
+        ///config///
+
+        configManager=new ConfigManager(Path.of(getDataFolder() + "config.yml"));
+        configManager.loadConfig();
         PowerfulFireworks.instance = this;
 
         this.nms = NMSSelector.getImplementation(Bukkit.getMinecraftVersion());
