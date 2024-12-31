@@ -28,6 +28,9 @@ public final class PowerfulFireworks extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        if (this.nms == null)
+            throw new IllegalStateException("NMS not initialized");
+
         ////bStats////
         int pluginId = 21763;
         Metrics metrics = new Metrics(this, pluginId);
