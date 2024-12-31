@@ -24,6 +24,18 @@ allprojects {
         options.encoding = 'UTF-8'
     }
 
+    repositories {
+        mavenCentral()
+        maven {
+            name = "papermc-repo"
+            url = "https://repo.papermc.io/repository/maven-public/"
+        }
+        maven {
+            name = "sonatype"
+            url = "https://oss.sonatype.org/content/groups/public/"
+        }
+    }
+
     dependencies {
         // lombok
         compileOnly 'org.projectlombok:lombok:1.18.36'
@@ -41,18 +53,6 @@ subprojects {
 configurations {
     include
     implementation.extendsFrom(include)
-}
-
-repositories {
-    mavenCentral()
-    maven {
-        name = "papermc-repo"
-        url = "https://repo.papermc.io/repository/maven-public/"
-    }
-    maven {
-        name = "sonatype"
-        url = "https://oss.sonatype.org/content/groups/public/"
-    }
 }
 
 dependencies {
