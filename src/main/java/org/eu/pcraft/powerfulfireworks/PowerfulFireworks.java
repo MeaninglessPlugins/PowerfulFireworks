@@ -1,5 +1,6 @@
 package org.eu.pcraft.powerfulfireworks;
 
+import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -7,8 +8,10 @@ import org.eu.pcraft.powerfulfireworks.nms.NMSSelector;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSProvider;
 
 public final class PowerfulFireworks extends JavaPlugin {
+    @Getter
     private static PowerfulFireworks instance;
 
+    @Getter
     private NMSProvider nms;
 
     @Override

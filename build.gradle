@@ -45,6 +45,12 @@ dependencies {
     compileOnly 'org.bstats:bstats-bukkit:3.0.2'
 
     implementation project(":nms")
+
+    // lombok
+    compileOnly 'org.projectlombok:lombok:1.18.36'
+    annotationProcessor 'org.projectlombok:lombok:1.18.36'
+    testCompileOnly 'org.projectlombok:lombok:1.18.36'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.36'
 }
 
 bukkit {
