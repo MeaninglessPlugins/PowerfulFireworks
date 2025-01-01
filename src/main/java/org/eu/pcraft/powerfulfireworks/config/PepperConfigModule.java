@@ -10,5 +10,11 @@ public class PepperConfigModule {
     @Comment("版本信息,请不要修改! ")
     public String configVersion = "0.0.1";
     public boolean debug = false;
-
+    public static class RandomFirework{
+        public int min_delay = 10;
+        public int max_delay = 20;
+        public boolean automatic_distance = true;
+        public int distance = 20;
+    }
+    public RandomFirework randomFirework= new RandomFirework();
 }

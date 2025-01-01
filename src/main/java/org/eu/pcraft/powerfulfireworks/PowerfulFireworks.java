@@ -75,7 +75,7 @@ public final class PowerfulFireworks extends JavaPlugin {
         //Listener
         Bukkit.getPluginManager().registerEvents(new EventListener(), instance);
         //Timer
-        timer=new FireworksTimer(10, 20, instance);
+        timer=new FireworksTimer(configManager.configModule.randomFirework.min_delay, configManager.configModule.randomFirework.max_delay, instance);
         timer.start();
     }
 
