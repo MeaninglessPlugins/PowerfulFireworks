@@ -15,8 +15,8 @@ public final class FireworkUtil {
     public Location getRandomLocation(Player p){
         int maxDistance=pl.getServer().getViewDistance()*16;
         Location location=p.getLocation();
-        location.setX(location.x()+r.nextDouble()*maxDistance);
-        location.setZ(location.y()+r.nextDouble()*maxDistance);
+        location.setX(location.x()+(r.nextDouble()*2-1)*maxDistance);
+        location.setZ(location.z()+(r.nextDouble()*2-1)*maxDistance);
         int minY=location.getWorld().getHighestBlockYAt(location);
         location.setY(minY+10+r.nextDouble()*400);
         return location;
