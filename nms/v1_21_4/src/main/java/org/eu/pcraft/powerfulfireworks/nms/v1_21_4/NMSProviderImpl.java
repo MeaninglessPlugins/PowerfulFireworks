@@ -2,16 +2,15 @@ package org.eu.pcraft.powerfulfireworks.nms.v1_21_4;
 
 import io.netty.buffer.Unpooled;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
-import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
-import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -53,11 +52,6 @@ public class NMSProviderImpl implements NMSProvider {
     }
 
     @Override
-    public NMSPlayer getPlayer(Player player) {
-        return new NMSPlayerImpl(player);
-    }
-
-    @Override
     public NMSAddEntityPacket createAddFireworkEntityPacket(int id, UUID uuid, Location location) {
         return new NMSAddEntityPacketImpl(new ClientboundAddEntityPacket(id, uuid, location.x(), location.y(), location.z(), location.getPitch(), location.getYaw(), EntityType.FIREWORK_ROCKET, 0, Vec3.ZERO, 0));
     }
@@ -70,6 +64,25 @@ public class NMSProviderImpl implements NMSProvider {
     @Override
     public NMSRemoveEntityPacket createRemoveEntityPacket(int... id) {
         return new NMSRemoveEntityPacketImpl(new ClientboundRemoveEntitiesPacket(id));
+    }
+
+    @Override
+    public void sendAddEntity(Player player, NMSAddEntityPacket addEntityPacket, NMSEntityDataPacket dataPacket) {
+        ServerGamePacketListenerImpl conn = ((CraftPlayer) player).getHandle().connection;
+        conn.send(((NMSAddEntityPacketImpl) addEntityPacket).unwrap());
+        conn.send(((NMSEntityDataPacketImpl) dataPacket).unwrap());
+    }
+
+    @Override
+    public void sendEntityEvent(Player player, NMSEntityEventPacket packet) {
+        ServerGamePacketListenerImpl conn = ((CraftPlayer) player).getHandle().connection;
+        conn.send(((NMSEntityEventPacketImpl) packet).unwrap());
+    }
+
+    @Override
+    public void sendRemoveEntity(Player player, NMSRemoveEntityPacket removeEntityPacket) {
+        ServerGamePacketListenerImpl conn = ((CraftPlayer) player).getHandle().connection;
+        conn.send(((NMSRemoveEntityPacketImpl) removeEntityPacket).unwrap());
     }
 
     @Override

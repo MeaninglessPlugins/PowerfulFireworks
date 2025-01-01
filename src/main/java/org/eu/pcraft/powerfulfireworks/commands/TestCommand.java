@@ -6,8 +6,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
-import org.eu.pcraft.powerfulfireworks.nms.common.NMSPlayer;
-import org.eu.pcraft.powerfulfireworks.nms.common.NMSProvider;
+import org.eu.pcraft.powerfulfireworks.nms.common.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
@@ -24,13 +23,17 @@ public class TestCommand extends Command {
             if (item.getType() == Material.FIREWORK_ROCKET) {   // check rocket
                 final PowerfulFireworks pl = PowerfulFireworks.getInstance();
                 final NMSProvider provider = pl.getNms();
-                final NMSPlayer nms = provider.getPlayer(player);
+                final int id = provider.allocateEntityId();
+                UUID uuid = UUID.randomUUID();
+                final NMSAddEntityPacket add = provider.createAddFireworkEntityPacket(id, uuid, player.getLocation().add(0.0, 10.0, 0.0));
+                final NMSEntityDataPacket data = provider.createFireworkEntityDataPacket(id, item);
+                final NMSEntityEventPacket event = provider.createEntityEvent(id, (byte) 17);
+                final NMSRemoveEntityPacket remove = provider.createRemoveEntityPacket(id);
                 PowerfulFireworks.getInstance().nextTick(() -> {
-                    UUID uuid = UUID.randomUUID();
-                    nms.sendFakeFirework(114514, uuid, player.getLocation().add(0.0, 10.0, 0.0), provider.createFireworkEntityDataPacket(114514, item));
+                    provider.sendAddEntity(player, add, data);
                     pl.nextTick(() -> {
-                        nms.sendEntityEvent(provider.createEntityEvent(114514, (byte) 17)); // firework explosion
-                        nms.sendRemoveEntity(114514);
+                        provider.sendEntityEvent(player, event);
+                        provider.sendRemoveEntity(player, remove);
                     });
                 });
             } else {
