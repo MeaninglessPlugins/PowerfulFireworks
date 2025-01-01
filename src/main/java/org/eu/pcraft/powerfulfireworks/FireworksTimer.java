@@ -15,7 +15,7 @@ public class FireworksTimer extends PepperRollTimer{
     protected void run(){
         final PowerfulFireworks pl = PowerfulFireworks.getInstance();
         final NMSProvider provider = pl.getNms();
-        int entityId = 114514;
+        int entityId = provider.allocateEntityId();
         NMSEntityDataPacket fakeFirework = provider.createFireworkEntityDataPacket(entityId, fireworkUtil.getRandomFireworkItem());
         NMSEntityEventPacket eventPacket = provider.createEntityEvent(entityId, (byte) 17);
         NMSRemoveEntityPacket removePacket = provider.createRemoveEntityPacket(entityId);
