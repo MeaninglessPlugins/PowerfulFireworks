@@ -62,6 +62,8 @@ dependencies {
     include 'org.bstats:bstats-bukkit:3.0.2'
 
     include project(":nms")
+    include project(path: ":nms:v1_21_4", configuration: "reobf")
+    include project(path: ":nms:v1_20_4", configuration: "reobf")
 }
 
 bukkit {
