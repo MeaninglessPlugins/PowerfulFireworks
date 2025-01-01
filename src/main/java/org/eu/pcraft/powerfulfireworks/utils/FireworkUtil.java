@@ -1,18 +1,13 @@
 package org.eu.pcraft.powerfulfireworks.utils;
 
 import org.bukkit.*;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitTask;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
+import org.eu.pcraft.powerfulfireworks.nms.common.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public final class FireworkUtil {
     Random r = new Random();
@@ -61,5 +56,70 @@ public final class FireworkUtil {
         fireworkMeta.setPower(power);
         fireworkItem.setItemMeta(fireworkMeta);
         return fireworkItem;
+    }
+
+    /**
+     * Broadcast firework add and data to players
+     * @param targets players
+     * @param item firework item
+     * @param location location
+     * @return fake entity ID
+     */
+    public static int broadcastFireworkCreate(Collection<Player> targets, ItemStack item, Location location) {
+        if (item.getType() != Material.FIREWORK_ROCKET)
+            throw new IllegalArgumentException("Item is not a firework rocket");
+        if (!item.hasItemMeta())
+            throw new IllegalArgumentException("Item has no ItemMeta");
+        if (targets.isEmpty())
+            throw new IllegalArgumentException("No target specified");
+
+        NMSProvider provider = PowerfulFireworks.getInstance().getNms();
+
+        // prepare packets
+        final int id = provider.allocateEntityId();
+        NMSAddEntityPacket add = provider.createAddFireworkEntityPacket(id, UUID.randomUUID(), location);
+        NMSEntityDataPacket data = provider.createFireworkEntityDataPacket(id, item);
+
+        for (Player target : targets) {
+            provider.sendAddEntity(target, add, data);
+        }
+
+        return id;
+    }
+
+    /**
+     * broadcast multiple firework explosions to players
+     * @param targets target players
+     * @param firework target firework entities
+     */
+    public static void broadcastFireworkExplosion(Collection<Player> targets, int... firework) {
+        if (firework.length == 0)
+            return;
+
+        NMSProvider provider = PowerfulFireworks.getInstance().getNms();
+
+        if (firework.length == 1) {
+            // prepare event packets
+            NMSEntityEventPacket event = provider.createEntityEvent(firework[0], (byte) 17);
+            NMSRemoveEntityPacket remove = provider.createRemoveEntityPacket(firework);
+            for (Player target : targets) {
+                provider.sendEntityEvent(target, event);
+                provider.sendRemoveEntity(target, remove);
+            }
+        } else {
+            // multiple in one time
+            List<NMSEntityEventPacket> events = new ArrayList<>();
+            for (int id : firework) {
+                NMSEntityEventPacket event = provider.createEntityEvent(id, (byte) 17);
+                events.add(event);
+            }
+            NMSRemoveEntityPacket remove = provider.createRemoveEntityPacket(firework);
+            for (Player target : targets) {
+                for (NMSEntityEventPacket event : events) {
+                    provider.sendEntityEvent(target, event);
+                }
+                provider.sendRemoveEntity(target, remove);
+            }
+        }
     }
 }
