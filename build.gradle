@@ -97,4 +97,7 @@ shadowJar {
             relocate s, "org.eu.pcraft.powerfulfireworks.${s}"
         }
     }
+    manifest {
+        attributes["paperweight-mappings-namespace"] = "spigot"
+    }
 }
