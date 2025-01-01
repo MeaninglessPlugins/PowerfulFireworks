@@ -5,6 +5,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import org.bukkit.craftbukkit.v1_20_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack;
@@ -58,6 +59,11 @@ public class NMSProviderImpl implements NMSProvider {
         net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
 
         return new NMSEntityDataPacketImpl(new ClientboundSetEntityDataPacket(id, List.of(new SynchedEntityData.DataItem<>(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, nms).value())));
+    }
+
+    @Override
+    public int allocateEntityId() {
+        return Entity.nextEntityId();
     }
 
     int getEntityEventEntityId(ClientboundEntityEventPacket packet) {
