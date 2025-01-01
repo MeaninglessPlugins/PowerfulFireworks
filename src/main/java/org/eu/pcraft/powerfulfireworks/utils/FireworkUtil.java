@@ -3,10 +3,12 @@ package org.eu.pcraft.powerfulfireworks.utils;
 import org.bukkit.*;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Firework;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 
 import java.util.List;
 import java.util.Map;
@@ -14,6 +16,16 @@ import java.util.Random;
 
 public final class FireworkUtil {
     Random r = new Random();
+    final PowerfulFireworks pl = PowerfulFireworks.getInstance();
+    public Location getRandomLocation(Player p){
+        int maxDistance=pl.getServer().getViewDistance()*16;
+        Location location=p.getLocation();
+        location.setX(location.x()+r.nextDouble()*maxDistance);
+        location.setZ(location.y()+r.nextDouble()*maxDistance);
+        int minY=location.getWorld().getHighestBlockYAt(location);
+        location.setY(minY+10+r.nextDouble()*400);
+        return location;
+    }
     public ItemStack getRandomFireworkItem(){
         FireworkEffect.Builder fireworkBuilder = FireworkEffect.builder();
 
