@@ -21,16 +21,17 @@ public class FireworksTimer extends PepperRollTimer{
     protected void run(){
         final PowerfulFireworks pl = PowerfulFireworks.getInstance();
         final NMSProvider provider = pl.getNms();
-        NMSEntityDataPacket fakeFirework = provider.createFireworkEntityDataPacket(114514, fireworkUtil.getRandomFireworkItem());
-        NMSEntityEventPacket eventPacket=provider.createEntityEvent(114514, (byte) 17);
+        int entityId = 114514;
+        NMSEntityDataPacket fakeFirework = provider.createFireworkEntityDataPacket(entityId, fireworkUtil.getRandomFireworkItem());
+        NMSEntityEventPacket eventPacket=provider.createEntityEvent(entityId, (byte) 17);
         for(Player player:plugin.getServer().getOnlinePlayers()){
             final NMSPlayer nms = provider.getPlayer(player);
             PowerfulFireworks.getInstance().nextTick(() -> {
                 UUID uuid = UUID.randomUUID();
-                nms.sendFakeFirework(114514, uuid, fireworkUtil.getRandomLocation(player), fakeFirework);
+                nms.sendFakeFirework(entityId, uuid, fireworkUtil.getRandomLocation(player), fakeFirework);
                 pl.nextTick(() -> {
                     nms.sendEntityEvent(eventPacket); // firework explosion
-                    nms.sendRemoveEntity(114514);
+                    nms.sendRemoveEntity(entityId);
                 });
             });
         }
