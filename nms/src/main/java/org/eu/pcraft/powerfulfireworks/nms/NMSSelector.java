@@ -9,6 +9,7 @@ public class NMSSelector {
                     new org.eu.pcraft.powerfulfireworks.nms.v1_21_4.NMSProviderImpl();
             case "1.20.4" -> new org.eu.pcraft.powerfulfireworks.nms.v1_20_4.NMSProviderImpl();
             case "1.20.2" -> new org.eu.pcraft.powerfulfireworks.nms.v1_20_2.NMSProviderImpl();
+            case "1.19.4" -> new org.eu.pcraft.powerfulfireworks.nms.v1_19_4.NMSProviderImpl();
             default -> null;
         };
     }
