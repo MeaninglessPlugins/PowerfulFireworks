@@ -1,0 +1,13 @@
+prefix: '<gray>[</gray><gold>烟花</gold><gray>]</gray> '
+
+commands:
+  no-permission: <red>你没有权限执行此操作</red>
+
+  fireworks:
+    help:
+      header: "用法： "
+      help: "显示此帮助信息"
+      reload: "重新加载配置文件"
+    reload:
+      complete: "配置重载完成"
+      failed: "配置重载失败"
