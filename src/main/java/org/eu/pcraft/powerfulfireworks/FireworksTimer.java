@@ -1,13 +1,16 @@
 package org.eu.pcraft.powerfulfireworks;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.eu.pcraft.powerfulfireworks.nms.common.*;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 
+import java.util.Random;
 import java.util.UUID;
 
 public class FireworksTimer extends PepperRollTimer{
     FireworkUtil fireworkUtil=new FireworkUtil();
+    Random r=new Random();
     public FireworksTimer(int mindelay, int maxdelay, PowerfulFireworks javaPlugin) {
         super(mindelay, maxdelay, javaPlugin);
     }
@@ -19,14 +22,15 @@ public class FireworksTimer extends PepperRollTimer{
         NMSEntityDataPacket fakeFirework = provider.createFireworkEntityDataPacket(entityId, fireworkUtil.getRandomFireworkItem());
         NMSEntityEventPacket eventPacket = provider.createEntityEvent(entityId, (byte) 17);
         NMSRemoveEntityPacket removePacket = provider.createRemoveEntityPacket(entityId);
+//        System.out.println(entityId);
         for(Player player:plugin.getServer().getOnlinePlayers()){
             PowerfulFireworks.getInstance().nextTick(() -> {
                 UUID uuid = UUID.randomUUID();
                 provider.sendAddEntity(player, provider.createAddFireworkEntityPacket(entityId, uuid, fireworkUtil.getRandomLocation(player)), fakeFirework);
-                pl.nextTick(() -> {
+                Bukkit.getScheduler().runTaskLater(pl,() -> {
                     provider.sendEntityEvent(player, eventPacket);
                     provider.sendRemoveEntity(player, removePacket);
-                });
+                },r.nextInt(120));
             });
         }
         start();

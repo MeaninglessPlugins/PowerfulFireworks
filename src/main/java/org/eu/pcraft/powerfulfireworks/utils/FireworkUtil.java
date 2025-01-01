@@ -18,7 +18,7 @@ public final class FireworkUtil {
         location.setX(location.x()+(r.nextDouble()*2-1)*maxDistance);
         location.setZ(location.z()+(r.nextDouble()*2-1)*maxDistance);
         int minY=location.getWorld().getHighestBlockYAt(location);
-        location.setY(minY+10+r.nextDouble()*400);
+        location.setY(minY+1);
         return location;
     }
     public ItemStack getRandomFireworkItem(){
