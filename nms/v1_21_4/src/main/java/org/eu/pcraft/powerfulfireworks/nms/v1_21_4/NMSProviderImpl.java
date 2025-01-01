@@ -2,18 +2,19 @@ package org.eu.pcraft.powerfulfireworks.nms.v1_21_4;
 
 import io.netty.buffer.Unpooled;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
+import net.minecraft.world.phys.Vec3;
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.eu.pcraft.powerfulfireworks.nms.common.NMSEntityDataPacket;
-import org.eu.pcraft.powerfulfireworks.nms.common.NMSEntityEventPacket;
-import org.eu.pcraft.powerfulfireworks.nms.common.NMSPlayer;
-import org.eu.pcraft.powerfulfireworks.nms.common.NMSProvider;
+import org.eu.pcraft.powerfulfireworks.nms.common.*;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -21,6 +22,7 @@ import java.lang.invoke.VarHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.UUID;
 
 public class NMSProviderImpl implements NMSProvider {
     private final MethodHandle mhEntityEventConstructor;
@@ -52,6 +54,11 @@ public class NMSProviderImpl implements NMSProvider {
     @Override
     public NMSPlayer getPlayer(Player player) {
         return new NMSPlayerImpl(player);
+    }
+
+    @Override
+    public NMSAddEntityPacket createAddFireworkEntityPacket(int id, UUID uuid, Location location) {
+        return new NMSAddEntityPacketImpl(new ClientboundAddEntityPacket(id, uuid, location.x(), location.y(), location.z(), location.getPitch(), location.getYaw(), EntityType.FIREWORK_ROCKET, 0, Vec3.ZERO, 0));
     }
 
     public NMSEntityDataPacket createFireworkEntityDataPacket(int id, ItemStack item) {
