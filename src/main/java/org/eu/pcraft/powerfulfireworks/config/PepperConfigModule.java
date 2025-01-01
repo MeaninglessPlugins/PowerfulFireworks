@@ -7,5 +7,6 @@ import org.spongepowered.configurate.objectmapping.meta.Comment;
 public class PepperConfigModule {
     @Comment("PowerfulFireworks配置文件") String a;
     @Comment("Written by:Pepper&H3xadecimal") String b;
+    public boolean debug = false;
 
 }
