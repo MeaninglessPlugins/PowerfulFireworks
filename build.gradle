@@ -64,6 +64,7 @@ dependencies {
     include project(":nms")
     include project(path: ":nms:v1_21_4", configuration: "reobf")
     include project(path: ":nms:v1_20_4", configuration: "reobf")
+    include project(path: ":nms:v1_20_2", configuration: "reobf")
 }
 
 bukkit {
