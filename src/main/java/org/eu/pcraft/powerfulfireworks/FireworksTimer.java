@@ -22,7 +22,7 @@ public class FireworksTimer extends PepperRollTimer{
             final NMSPlayer nms = provider.getPlayer(player);
             PowerfulFireworks.getInstance().nextTick(() -> {
                 UUID uuid = UUID.randomUUID();
-                nms.sendFakeFirework(114514, uuid, player.getLocation().add(0.0, 5.0, 0.0), provider.createFireworkEntityDataPacket(114514, fireworkUtil.getRandomFireworkItem()));
+                nms.sendFakeFirework(114514, uuid, fireworkUtil.getRandomLocation(player), provider.createFireworkEntityDataPacket(114514, fireworkUtil.getRandomFireworkItem()));
                 pl.nextTick(() -> {
                     nms.sendEntityEvent(provider.createEntityEvent(114514, (byte) 17)); // firework explosion
                     nms.sendRemoveEntity(114514);
