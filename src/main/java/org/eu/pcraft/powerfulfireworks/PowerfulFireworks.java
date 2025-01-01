@@ -19,6 +19,7 @@ public final class PowerfulFireworks extends JavaPlugin {
     private NMSProvider nms;
 
     ConfigManager configManager;
+    FireworksTimer timer;
 
     @Override
     public void onLoad() {
@@ -52,15 +53,18 @@ public final class PowerfulFireworks extends JavaPlugin {
         Metrics metrics = new Metrics(this, pluginId);
         //Permissions
         Permissions.register();
-
         // Test command
         Bukkit.getCommandMap().register("fireworks", new TestCommand());
         //Listener
         Bukkit.getPluginManager().registerEvents(new EventListener(), instance);
+        //Timer
+        timer=new FireworksTimer(1, 100, instance);
+        timer.start();
     }
 
     @Override
     public void onDisable() {
+        timer.stop();
         // Plugin shutdown logic
     }
 
