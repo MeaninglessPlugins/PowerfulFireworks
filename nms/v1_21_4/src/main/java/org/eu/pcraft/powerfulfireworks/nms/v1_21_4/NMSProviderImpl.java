@@ -4,6 +4,7 @@ import io.netty.buffer.Unpooled;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
+import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
@@ -64,6 +65,11 @@ public class NMSProviderImpl implements NMSProvider {
     public NMSEntityDataPacket createFireworkEntityDataPacket(int id, ItemStack item) {
         net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
         return new NMSEntityDataPacketImpl(new ClientboundSetEntityDataPacket(id, List.of(SynchedEntityData.DataValue.create(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, nms))));
+    }
+
+    @Override
+    public NMSRemoveEntityPacket createRemoveEntityPacket(int... id) {
+        return new NMSRemoveEntityPacketImpl(new ClientboundRemoveEntitiesPacket(id));
     }
 
     @Override
