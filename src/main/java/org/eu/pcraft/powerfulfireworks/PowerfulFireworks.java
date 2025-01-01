@@ -55,6 +55,8 @@ public final class PowerfulFireworks extends JavaPlugin {
 
         // Test command
         Bukkit.getCommandMap().register("fireworks", new TestCommand());
+        //Listener
+        Bukkit.getPluginManager().registerEvents(new EventListener(), instance);
     }
 
     @Override
