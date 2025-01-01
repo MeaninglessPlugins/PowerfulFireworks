@@ -1,0 +1,24 @@
+import io.papermc.paperweight.userdev.ReobfArtifactConfiguration
+
+plugins {
+    id "io.papermc.paperweight.userdev"
+}
+
+dependencies {
+    paperweight.paperDevBundle("1.20.2-R0.1-SNAPSHOT")
+    api project(":nms:common")
+    compileOnly project(":nms:v1_20_4")
+}
+
+compileJava {
+    options.release = 17
+}
+
+paperweight {
+    setReobfArtifactConfiguration(ReobfArtifactConfiguration.getREOBF_PRODUCTION())
+}
+
+configurations.reobf {
+    extendsFrom(configurations.apiElements)
+    extendsFrom(configurations.runtimeElements)
+}

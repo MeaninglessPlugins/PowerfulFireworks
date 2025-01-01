@@ -2,6 +2,7 @@ dependencies {
     api project(":nms:common")
     compileOnly project(":nms:v1_21_4")
     compileOnly project(':nms:v1_20_4')
+    compileOnly project(":nms:v1_20_2")
 }
 
 compileJava {
