@@ -1,11 +1,11 @@
 package org.eu.pcraft.powerfulfireworks.nms.v1_21_4;
 
 import io.netty.buffer.Unpooled;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
@@ -20,8 +20,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class NMSProviderImpl implements NMSProvider {
@@ -59,6 +57,11 @@ public class NMSProviderImpl implements NMSProvider {
     public NMSEntityDataPacket createFireworkEntityDataPacket(int id, ItemStack item) {
         net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
         return new NMSEntityDataPacketImpl(new ClientboundSetEntityDataPacket(id, List.of(SynchedEntityData.DataValue.create(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, nms))));
+    }
+
+    @Override
+    public int allocateEntityId() {
+        return Entity.nextEntityId();
     }
 
     @Override

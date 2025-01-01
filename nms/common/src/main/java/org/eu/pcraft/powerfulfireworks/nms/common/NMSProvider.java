@@ -10,4 +10,6 @@ public interface NMSProvider {
 
     NMSEntityEventPacket createEntityEvent(int entity, byte event);
     NMSEntityDataPacket createFireworkEntityDataPacket(int id, ItemStack item);
+
+    int allocateEntityId();
 }
