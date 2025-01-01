@@ -1,9 +1,6 @@
 package org.eu.pcraft.powerfulfireworks;
 
-import org.bukkit.FireworkEffect;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.FireworkMeta;
 import org.eu.pcraft.powerfulfireworks.nms.common.*;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 
