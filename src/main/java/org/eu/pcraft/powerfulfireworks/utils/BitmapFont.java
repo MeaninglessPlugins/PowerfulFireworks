@@ -7,62 +7,66 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
 
+import static java.lang.Math.max;
+
 @AllArgsConstructor
 public class BitmapFont {
-    private final Map<Character, int[][]> characters;
+
+    public static class CharBitmap{
+        CharBitmap(int length){
+            ch=new String[length];
+        }
+        public String[] ch;
+    }
+    private final Map<Character, CharBitmap> characters;
     private final int charHeight;
 
-    public int[][] getCharacter(char character) {
-        return characters.getOrDefault(character, new int[charHeight][0]);
+    public CharBitmap getCharacter(char character) {
+//        System.out.println(Arrays.toString(characters.get(character).ch));
+        return characters.getOrDefault(character, new CharBitmap(charHeight));
     }
 
-    public int[][] fromString(String text, int gap) {
+    public CharBitmap fromString(String text, int gap) {
         if (text == null || text.isEmpty()) {
-            return new int[0][0];
+            return new CharBitmap(0);
         }
 
-        // First pass: calculate total width
-        int totalWidth = 0;
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            int[][] charBitmap = this.getCharacter(c);
-            if (charBitmap != null) {
-                totalWidth += charBitmap[0].length;
-                if (i < text.length() - 1) {
-                    totalWidth += gap;
-                }
-            }
-        }
+//        // First pass: calculate total width
+//        int totalWidth = 0;
+//        for (int i = 0; i < text.length(); i++) {
+//            char c = text.charAt(i);
+//            CharBitmap charBitmap = this.getCharacter(c);
+//            if (charBitmap != null) {
+//                totalWidth += charBitmap.ch[0].length();
+//                if (i < text.length() - 1) {
+//                    totalWidth += gap;
+//                }
+//            }
+//        }
 
-        int[][] resultBitmap = new int[charHeight][totalWidth];
-        int currentX = 0;
+        CharBitmap resultBitmap = new CharBitmap(charHeight);
 
         // Second pass: copy characters
         for (char c : text.toCharArray()) {
-            int[][] charBitmap = this.getCharacter(c);
+            CharBitmap charBitmap = this.getCharacter(c);
             if (charBitmap != null) {
-                copyCharacterBitmap(resultBitmap, charBitmap, currentX);
-                currentX += charBitmap[0].length + gap;
+                for(int i = 0;i < charHeight;i++){
+                    resultBitmap.ch[i]+=charBitmap.ch[i];
+                }
+//                currentX += charBitmap[0].length + gap;
             }
         }
 
         return resultBitmap;
     }
 
-    private void copyCharacterBitmap(int[][] resultBitmap, int[][] charBitmap, int xOffset) {
-        for (int y = 0; y < charBitmap.length; y++) {
-            for (int x = 0; x < charBitmap[y].length; x++) {
-                resultBitmap[y][xOffset + x] = charBitmap[y][x];
-            }
-        }
-    }
-
     public static BitmapFont parseBDF(String text) throws IOException {
-        Map<Character, int[][]> fontMap = new HashMap<>();
+        int maxCurrentRow = 0;
+        Map<Character, CharBitmap> fontMap = new HashMap<>();
         try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
             String line;
             Character currentChar = null;
-            int[][] currentBitmap = null;
+            CharBitmap currentBitmap = null;
             int bitmapWidth = 0;
             int bitmapHeight = 0;
             int currentRow = 0;
@@ -81,7 +85,7 @@ public class BitmapFont {
                     String[] parts = line.split("\\s+");
                     bitmapWidth = Integer.parseInt(parts[1]);
                     bitmapHeight = Integer.parseInt(parts[2]);
-                    currentBitmap = new int[bitmapHeight][bitmapWidth];
+                    currentBitmap = new CharBitmap(bitmapHeight);
                 }
                 // Start of bitmap data
                 else if (line.equals("BITMAP")) {
@@ -100,32 +104,25 @@ public class BitmapFont {
                 // Parse bitmap data
                 else if (inBitmap && currentBitmap != null && currentRow < bitmapHeight) {
                     // Convert hex string to binary representation
-                    String binaryStr = hexToBinary(line, bitmapWidth);
-
-                    // Fill current row of the bitmap
-                    for (int i = 0; i < bitmapWidth; i++) {
-                        currentBitmap[currentRow][i] = binaryStr.charAt(i) == '1' ? 1 : 0;
-                    }
+                    currentBitmap.ch[currentRow] = hexToBinary(line, bitmapWidth);
+//                    System.out.println(hexToBinary(line, bitmapWidth));
+//                    System.out.println(currentBitmap.ch[currentRow]);
+                    maxCurrentRow = max(currentRow,maxCurrentRow);
                     currentRow++;
                 }
             }
         }
-
-        return new BitmapFont(fontMap,
-                fontMap.values().stream()
-                        .mapToInt(bitmap -> bitmap.length)
-                        .max()
-                        .orElse(0));
+        return new BitmapFont(fontMap, maxCurrentRow);
     }
 
     private static String hexToBinary(String hex, int width) {
         // Convert hex string to binary string
         StringBuilder binary = new StringBuilder();
         for (char c : hex.toCharArray()) {
-            String bin = Integer.toBinaryString(Integer.parseInt(String.valueOf(c), 16));
+            StringBuilder bin = new StringBuilder(Integer.toBinaryString(Integer.parseInt(String.valueOf(c), 16)));
             // Pad with leading zeros
             while (bin.length() < 4) {
-                bin = "0" + bin;
+                bin.insert(0, "0");
             }
             binary.append(bin);
         }
