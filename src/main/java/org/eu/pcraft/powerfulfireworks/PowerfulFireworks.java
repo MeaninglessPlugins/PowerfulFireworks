@@ -44,12 +44,9 @@ public final class PowerfulFireworks extends JavaPlugin {
     public void onLoad() {
         //instance
         PowerfulFireworks.instance = this;
-
+        this.context = new BukkitPluginContext(this);
         //config
-        configManager=new ConfigManager(Path.of(getDataFolder() + "/config.yml"), mainConfig);
-        messagesManager=new ConfigManager(Path.of(getDataFolder() + "/messages.yml"), messageConfig);
-        configManager.loadConfig();
-        messagesManager.loadConfig();
+        loadConfigurations();
         if(mainConfig.debug){
             getLogger().warning("***WARNING***");
             getLogger().warning("You are using the DEBUGING mode!");
@@ -69,9 +66,6 @@ public final class PowerfulFireworks extends JavaPlugin {
     public void onEnable() {
         if (this.nms == null)
             throw new IllegalStateException("NMS not initialized");
-
-        this.context = new BukkitPluginContext(this);
-        this.loadConfigurations();
 
         //bStats
         int pluginId = 24294;
@@ -108,12 +102,11 @@ public final class PowerfulFireworks extends JavaPlugin {
     }
 
     public void loadConfigurations() {
-        // Messages
+        configManager=new ConfigManager(Path.of(getDataFolder() + "/config.yml"), mainConfig);
+        messagesManager=new ConfigManager(Path.of(getDataFolder() + "/messages.yml"), messageConfig);
+        configManager.loadConfig();
+        messagesManager.loadConfig();
         try {
-            File dataFolder = this.getDataFolder();
-            if (!dataFolder.exists())
-                dataFolder.mkdir();
-
             this.context.setLocalizations(new ConfigurationLocalizations(this.context.upgradeConfiguration("messages.yml")));
             this.context.setDefaultLocalizeMode(IAdventureLocalizations.LocalizeMode.MM);
             this.context.setMessageLinePrefix(new MessageBuilder()
