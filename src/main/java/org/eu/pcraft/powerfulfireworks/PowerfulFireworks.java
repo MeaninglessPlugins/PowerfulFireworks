@@ -12,6 +12,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.eu.pcraft.powerfulfireworks.commands.MainCommand;
 import org.eu.pcraft.powerfulfireworks.commands.TestCommand;
 import org.eu.pcraft.powerfulfireworks.config.ConfigManager;
+import org.eu.pcraft.powerfulfireworks.config.MessagesConfigModule;
+import org.eu.pcraft.powerfulfireworks.config.PepperConfigModule;
 import org.eu.pcraft.powerfulfireworks.nms.NMSSelector;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSProvider;
 
@@ -29,6 +31,13 @@ public final class PowerfulFireworks extends JavaPlugin {
 
     @Getter
     private ConfigManager configManager;
+    @Getter
+    private ConfigManager messagesManager;
+
+    @Getter
+    private MessagesConfigModule messageConfig = new MessagesConfigModule();
+    @Getter
+    public PepperConfigModule mainConfig = new PepperConfigModule();
     FireworksTimer timer;
 
     @Override
@@ -37,9 +46,11 @@ public final class PowerfulFireworks extends JavaPlugin {
         PowerfulFireworks.instance = this;
 
         //config
-        configManager=new ConfigManager(Path.of(getDataFolder() + "/config.yml"), instance);
+        configManager=new ConfigManager(Path.of(getDataFolder() + "/config.yml"), mainConfig);
+        messagesManager=new ConfigManager(Path.of(getDataFolder() + "/messages.yml"), messageConfig);
         configManager.loadConfig();
-        if(configManager.configModule.debug){
+        messagesManager.loadConfig();
+        if(mainConfig.debug){
             getLogger().warning("***WARNING***");
             getLogger().warning("You are using the DEBUGING mode!");
             getLogger().warning("To make it disabled, change 'debug' in config.yml into false!");
@@ -77,8 +88,8 @@ public final class PowerfulFireworks extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new EventListener(), instance);
         //Timer
         timer=new FireworksTimer(
-                configManager.configModule.randomFirework.min_delay,
-                configManager.configModule.randomFirework.max_delay, instance);
+                mainConfig.randomFirework.min_delay,
+                mainConfig.randomFirework.max_delay, instance);
         timer.start();
     }
 
@@ -102,6 +113,7 @@ public final class PowerfulFireworks extends JavaPlugin {
             File dataFolder = this.getDataFolder();
             if (!dataFolder.exists())
                 dataFolder.mkdir();
+
             this.context.setLocalizations(new ConfigurationLocalizations(this.context.upgradeConfiguration("messages.yml")));
             this.context.setDefaultLocalizeMode(IAdventureLocalizations.LocalizeMode.MM);
             this.context.setMessageLinePrefix(new MessageBuilder()

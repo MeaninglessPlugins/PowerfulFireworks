@@ -19,20 +19,24 @@ public class ConfigManager {
     CommentedConfigurationNode node;
 
     YamlConfigurationLoader loader;
-    public PepperConfigModule configModule;
-    public ConfigManager(Path src,PowerfulFireworks inst){
+
+    Class configType;
+    Object configModule;
+
+    public ConfigManager(Path src,Object cm){
         loader = YamlConfigurationLoader.builder()
                 .nodeStyle(NodeStyle.BLOCK)
                 .indent(2)
                 .path(src) // Set where we will load and save to
                 .build();
         node=loader.createNode();
-//        node.comment("PowerfulFireworks配置文件");
+        configType=cm.getClass();
+        configModule=cm;
     }
     public void loadConfig(){
         try {
             node=loader.load();
-            configModule=node.get(PepperConfigModule.class);
+            configModule=node.get(configType);
             saveConfig();
         }catch (ConfigurateException e){
             throw new RuntimeException(e);
@@ -40,7 +44,6 @@ public class ConfigManager {
     }
     public void saveConfig(){
         try {
-
             node.set(configModule);
             loader.save(node);
         }catch (ConfigurateException e){

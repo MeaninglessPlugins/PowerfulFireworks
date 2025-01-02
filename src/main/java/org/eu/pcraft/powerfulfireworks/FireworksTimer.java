@@ -29,7 +29,7 @@ public class FireworksTimer extends PepperRollTimer{
                 Bukkit.getScheduler().runTaskLater(pl,() -> {
                     provider.sendEntityEvent(player, eventPacket);
                     provider.sendRemoveEntity(player, removePacket);
-                },r.nextInt(pl.getConfigManager().configModule.randomFirework.min_fly_time,pl.getConfigManager().configModule.randomFirework.max_fly_time));
+                },r.nextInt(pl.getMainConfig().randomFirework.min_fly_time,pl.getMainConfig().randomFirework.max_fly_time));
             });
         }
         start();
