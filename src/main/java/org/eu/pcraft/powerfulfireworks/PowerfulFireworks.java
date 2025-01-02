@@ -45,6 +45,7 @@ public final class PowerfulFireworks extends JavaPlugin {
         //instance
         PowerfulFireworks.instance = this;
         this.context = new BukkitPluginContext(this);
+
         //config
         loadConfigurations();
         if(mainConfig.debug){
@@ -102,12 +103,14 @@ public final class PowerfulFireworks extends JavaPlugin {
     }
 
     public void loadConfigurations() {
+        //load
         configManager=new ConfigManager(Path.of(getDataFolder() + "/config.yml"), mainConfig);
         messagesManager=new ConfigManager(Path.of(getDataFolder() + "/messages.yml"), messageConfig);
         configManager.loadConfig();
         messagesManager.loadConfig();
+        //message
         try {
-            this.context.setLocalizations(new ConfigurationLocalizations(this.context.upgradeConfiguration("messages.yml")));
+            this.context.setLocalizations(new ConfigurationLocalizations(this.context.loadConfiguration("messages.yml")));
             this.context.setDefaultLocalizeMode(IAdventureLocalizations.LocalizeMode.MM);
             this.context.setMessageLinePrefix(new MessageBuilder()
                     .localizations(this.context.getLocalizations())
@@ -117,5 +120,6 @@ public final class PowerfulFireworks extends JavaPlugin {
         } catch (Throwable t) {
             throw new RuntimeException("Unable to load messages", t);
         }
+
     }
 }
