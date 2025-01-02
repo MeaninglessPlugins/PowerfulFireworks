@@ -27,7 +27,8 @@ public final class PowerfulFireworks extends JavaPlugin {
     @Getter
     private NMSProvider nms;
 
-    ConfigManager configManager;
+    @Getter
+    private ConfigManager configManager;
     FireworksTimer timer;
 
     @Override
@@ -75,7 +76,9 @@ public final class PowerfulFireworks extends JavaPlugin {
         //Listener
         Bukkit.getPluginManager().registerEvents(new EventListener(), instance);
         //Timer
-        timer=new FireworksTimer(configManager.configModule.randomFirework.min_delay, configManager.configModule.randomFirework.max_delay, instance);
+        timer=new FireworksTimer(
+                configManager.configModule.randomFirework.min_delay,
+                configManager.configModule.randomFirework.max_delay, instance);
         timer.start();
     }
 

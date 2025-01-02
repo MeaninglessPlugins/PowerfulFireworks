@@ -16,6 +16,8 @@ public class PepperConfigModule {
         public int max_delay = 20;
         public boolean automatic_distance = true;
         public int distance = 20;
+        public int min_fly_time = 70;
+        public int max_fly_time = 120;
     }
     public RandomFirework randomFirework= new RandomFirework();
 }

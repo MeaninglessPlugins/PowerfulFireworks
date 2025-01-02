@@ -22,15 +22,14 @@ public class FireworksTimer extends PepperRollTimer{
         NMSEntityDataPacket fakeFirework = provider.createFireworkEntityDataPacket(entityId, fireworkUtil.getRandomFireworkItem());
         NMSEntityEventPacket eventPacket = provider.createEntityEvent(entityId, (byte) 17);
         NMSRemoveEntityPacket removePacket = provider.createRemoveEntityPacket(entityId);
-//        System.out.println(entityId);
         for(Player player:plugin.getServer().getOnlinePlayers()){
             PowerfulFireworks.getInstance().nextTick(() -> {
                 UUID uuid = UUID.randomUUID();
-                provider.sendAddEntity(player, provider.createAddFireworkEntityPacket(entityId, uuid, fireworkUtil.getRandomLocation(player)), fakeFirework);
+                provider.sendAddEntity(player, provider.createAddFireworkEntityPacket(entityId, uuid, fireworkUtil.getRandomLocation(player.getLocation(),fireworkUtil.getMaxDistance(player))), fakeFirework);
                 Bukkit.getScheduler().runTaskLater(pl,() -> {
                     provider.sendEntityEvent(player, eventPacket);
                     provider.sendRemoveEntity(player, removePacket);
-                },r.nextInt(120));
+                },r.nextInt(pl.getConfigManager().configModule.randomFirework.min_fly_time,pl.getConfigManager().configModule.randomFirework.max_fly_time));
             });
         }
         start();

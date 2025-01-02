@@ -40,8 +40,8 @@ public class ConfigManager {
     }
     public void saveConfig(){
         try {
+
             node.set(configModule);
-//            Processor.comments();
             loader.save(node);
         }catch (ConfigurateException e){
             throw new RuntimeException(e);

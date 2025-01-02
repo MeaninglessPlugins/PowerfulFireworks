@@ -12,9 +12,13 @@ import java.util.*;
 public final class FireworkUtil {
     Random r = new Random();
     final PowerfulFireworks pl = PowerfulFireworks.getInstance();
-    public Location getRandomLocation(Player p){
-        int maxDistance=pl.getServer().getViewDistance()*16;
-        Location location=p.getLocation();
+    public int getMaxDistance(Player p){
+        if(pl.getConfigManager().configModule.randomFirework.automatic_distance){
+            return pl.getServer().getViewDistance()*16;
+        }
+        return pl.getConfigManager().configModule.randomFirework.distance;
+    }
+    public Location getRandomLocation(Location location,int maxDistance){
         location.setX(location.x()+(r.nextDouble()*2-1)*maxDistance);
         location.setZ(location.z()+(r.nextDouble()*2-1)*maxDistance);
         int minY=location.getWorld().getHighestBlockYAt(location);
