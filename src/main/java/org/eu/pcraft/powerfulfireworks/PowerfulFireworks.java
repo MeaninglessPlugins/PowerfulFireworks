@@ -16,9 +16,14 @@ import org.eu.pcraft.powerfulfireworks.config.MessagesConfigModule;
 import org.eu.pcraft.powerfulfireworks.config.PepperConfigModule;
 import org.eu.pcraft.powerfulfireworks.nms.NMSSelector;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSProvider;
+import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
 
-import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 public final class PowerfulFireworks extends JavaPlugin {
     @Getter
@@ -38,6 +43,10 @@ public final class PowerfulFireworks extends JavaPlugin {
     private MessagesConfigModule messageConfig = new MessagesConfigModule();
     @Getter
     public PepperConfigModule mainConfig = new PepperConfigModule();
+    @Getter private Map<String, BitmapFont> fonts;
+
+    private MainCommand mainCommand;
+
     FireworksTimer timer;
 
     @Override
@@ -77,7 +86,8 @@ public final class PowerfulFireworks extends JavaPlugin {
         // commands
         CommandMap map = Bukkit.getCommandMap();
         map.register("fireworks", new TestCommand());
-        map.register("fireworks", new MainCommand());
+        this.mainCommand = new MainCommand();
+        map.register("fireworks", this.mainCommand);
 
         //Listener
         Bukkit.getPluginManager().registerEvents(new EventListener(), instance);
@@ -121,5 +131,31 @@ public final class PowerfulFireworks extends JavaPlugin {
             throw new RuntimeException("Unable to load messages", t);
         }
 
+        // fonts
+        Path folder = this.getDataFolder().toPath().resolve("fonts");
+        try {
+            this.fonts = new HashMap<>();
+            if (!Files.exists(folder)) {
+                Files.createDirectories(folder);
+            }
+            Map<String, String> conf = this.mainConfig.fonts;
+            for (String id : conf.keySet()) {
+                Path path = folder.resolve(conf.get(id));
+                try {
+                    if (Files.isRegularFile(path)) {
+                        this.fonts.put(id.toLowerCase(Locale.ROOT), BitmapFont.parseBDF(Files.readString(path, StandardCharsets.UTF_8)));
+                    } else {
+                        this.getSLF4JLogger().warn("Invalid or missing font file {}: {}", id, conf.get(id));
+                    }
+                    this.getSLF4JLogger().info("Loaded font {} from {}", id, path);
+                } catch (Throwable t) {
+                    this.getSLF4JLogger().warn("Error loading font file {} for {}", conf.get(id), id, t);
+                }
+            }
+            if (this.mainCommand != null)
+                this.mainCommand.setFontIdComp(this.fonts.keySet().toArray(new String[0])); // Add to font ID completions
+        } catch (Throwable t) {
+            throw new RuntimeException("Unable to load fonts", t);
+        }
     }
 }
