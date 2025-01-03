@@ -113,9 +113,11 @@ public final class PowerfulFireworks extends JavaPlugin {
     }
 
     public void loadConfigurations() {
+        Path dataPath = getDataFolder().toPath();
+
         //load
-        configManager=new ConfigManager(Path.of(getDataFolder() + "/config.yml"), mainConfig);
-        messagesManager=new ConfigManager(Path.of(getDataFolder() + "/messages.yml"), messageConfig);
+        configManager=new ConfigManager(dataPath.resolve("config.yml"), mainConfig);
+        messagesManager=new ConfigManager(dataPath.resolve("messages.yml"), messageConfig);
         configManager.loadConfig();
         messagesManager.loadConfig();
         //message
@@ -132,7 +134,7 @@ public final class PowerfulFireworks extends JavaPlugin {
         }
 
         // fonts
-        Path folder = this.getDataFolder().toPath().resolve("fonts");
+        Path folder = dataPath.resolve("fonts");
         try {
             this.fonts = new HashMap<>();
             if (!Files.exists(folder)) {
