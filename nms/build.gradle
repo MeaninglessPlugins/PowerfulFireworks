@@ -1,9 +1,9 @@
 dependencies {
     api project(":nms:common")
-    compileOnly project(":nms:v1_21_4")
-    compileOnly project(':nms:v1_20_4')
-    compileOnly project(":nms:v1_20_2")
-    compileOnly project(":nms:v1_19_4")
+
+    for (String version : new String[]{"v1_21_4", "v1_20_4", "v1_20_2", "v1_19_4", "v1_18_2"}) {
+        compileOnly project(":nms:$version")
+    }
 }
 
 compileJava {

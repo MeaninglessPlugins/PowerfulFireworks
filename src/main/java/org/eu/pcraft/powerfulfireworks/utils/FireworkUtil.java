@@ -19,8 +19,8 @@ public final class FireworkUtil {
         return pl.getMainConfig().randomFirework.distance;
     }
     public Location getRandomLocation(Location location,int maxDistance){
-        location.setX(location.x()+(r.nextDouble()*2-1)*maxDistance);
-        location.setZ(location.z()+(r.nextDouble()*2-1)*maxDistance);
+        location.setX(location.getX()+(r.nextDouble()*2-1)*maxDistance);
+        location.setZ(location.getZ()+(r.nextDouble()*2-1)*maxDistance);
         int minY=location.getWorld().getHighestBlockYAt(location);
         location.setY(minY+1);
         return location;
