@@ -1,6 +1,8 @@
 package org.eu.pcraft.powerfulfireworks.utils;
 
+import it.unimi.dsi.fastutil.Arrays;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,12 +14,16 @@ import static java.lang.Math.max;
 @AllArgsConstructor
 public class BitmapFont {
 
+    @AllArgsConstructor
+    @Getter
     public static class CharBitmap{
+        private final String[] chars;
+
         CharBitmap(int length){
-            ch=new String[length];
+            chars = new String[length];
         }
-        public String[] ch;
     }
+
     private final Map<Character, CharBitmap> characters;
     private final int charHeight;
 
@@ -30,6 +36,9 @@ public class BitmapFont {
         if (text == null || text.isEmpty()) {
             return new CharBitmap(0);
         }
+
+        // create gap string
+        String gapStr = " ".repeat(Math.max(1, gap));
 
 //        // First pass: calculate total width
 //        int totalWidth = 0;
@@ -44,20 +53,29 @@ public class BitmapFont {
 //            }
 //        }
 
-        CharBitmap resultBitmap = new CharBitmap(charHeight);
+        StringBuilder[] builders = new StringBuilder[charHeight];
 
         // Second pass: copy characters
         for (char c : text.toCharArray()) {
             CharBitmap charBitmap = this.getCharacter(c);
             if (charBitmap != null) {
-                for(int i = 0;i < charHeight;i++){
-                    resultBitmap.ch[i]+=charBitmap.ch[i];
+                for(int i = 0; i < charHeight; i++){
+                    StringBuilder sb = builders[i];
+                    if (sb == null) {
+                        sb = new StringBuilder();
+                        builders[i] = sb;
+                    }
+                    sb.append(charBitmap.chars[i]).append(gapStr);
                 }
-//                currentX += charBitmap[0].length + gap;
             }
         }
 
-        return resultBitmap;
+        CharBitmap result = new CharBitmap(charHeight);
+        for (int i = 0; i < builders.length; i++) {
+            result.chars[i] = builders[i].toString();
+        }
+
+        return result;
     }
 
     public static BitmapFont parseBDF(String text) throws IOException {
@@ -104,7 +122,7 @@ public class BitmapFont {
                 // Parse bitmap data
                 else if (inBitmap && currentBitmap != null && currentRow < bitmapHeight) {
                     // Convert hex string to binary representation
-                    currentBitmap.ch[currentRow] = hexToBinary(line, bitmapWidth);
+                    currentBitmap.chars[currentRow] = hexToBinary(line, bitmapWidth);
 //                    System.out.println(hexToBinary(line, bitmapWidth));
 //                    System.out.println(currentBitmap.ch[currentRow]);
                     maxCurrentRow = max(currentRow,maxCurrentRow);
