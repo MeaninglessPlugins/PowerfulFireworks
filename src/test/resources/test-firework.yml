@@ -1,0 +1,20 @@
+id: "test"
+
+preset:
+  - a:
+      colors:
+        - "#FFFFFF"
+      flicker: true
+  - b:
+      colors:
+        - "#000000"
+      fades:
+        - "#FFFFFF"
+
+nodes:
+  - type: "single"
+    xOff: 0.0
+    yOff: 1.0
+    zOff: 1.0
+    preset: a
+

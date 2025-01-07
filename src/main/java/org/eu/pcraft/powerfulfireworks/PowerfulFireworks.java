@@ -8,6 +8,7 @@ import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.command.CommandMap;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.eu.pcraft.powerfulfireworks.commands.MainCommand;
 import org.eu.pcraft.powerfulfireworks.commands.TestCommand;
@@ -17,6 +18,7 @@ import org.eu.pcraft.powerfulfireworks.config.PepperConfigModule;
 import org.eu.pcraft.powerfulfireworks.nms.NMSSelector;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSProvider;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
+import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkScheduler;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -24,6 +26,8 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class PowerfulFireworks extends JavaPlugin {
     @Getter
@@ -44,6 +48,7 @@ public final class PowerfulFireworks extends JavaPlugin {
     @Getter
     public PepperConfigModule mainConfig = new PepperConfigModule();
     @Getter private Map<String, BitmapFont> fonts;
+    @Getter private Map<String, FireworkScheduler> schedulers;
 
     private MainCommand mainCommand;
 
@@ -159,5 +164,29 @@ public final class PowerfulFireworks extends JavaPlugin {
         } catch (Throwable t) {
             throw new RuntimeException("Unable to load fonts", t);
         }
+
+        // fireworks
+        Path fwPath = dataPath.resolve("fireworks");
+        this.schedulers = new HashMap<>();
+        try {
+            if (!Files.exists(fwPath))
+                Files.createDirectories(fwPath);
+            try (Stream<Path> paths = Files.list(fwPath)) {
+                for (Path path : paths
+                        .filter(it -> Files.isRegularFile(it) && it.toString().endsWith(".yml"))
+                        .collect(Collectors.toSet())) {
+                    try {
+                        FireworkScheduler compiled = FireworkScheduler.compile(YamlConfiguration.loadConfiguration(Files.newBufferedReader(path)));
+                        this.schedulers.put(compiled.getId(), compiled);
+                        this.getSLF4JLogger().info("Compiled {} from {}", compiled.getId(), path);
+                    } catch (Throwable e) {
+                        this.getSLF4JLogger().warn("Failed compiling firework from {}", path, e);
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            throw new RuntimeException("Unable to load firework schedulers", t);
+        }
+        this.getSLF4JLogger().info("Loaded {} firework schedulers", this.schedulers.size());
     }
 }
