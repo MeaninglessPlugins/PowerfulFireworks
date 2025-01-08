@@ -134,6 +134,8 @@ public class FireworkScheduler {
         try {
             registerCompiler("reference", lookup.findConstructor(ReferenceFireworkNode.class, type));
             registerCompiler("single", lookup.findConstructor(SingleFireworkNode.class, type));
+            registerCompiler("text", lookup.findConstructor(TextFireworkNode.class, type));
+            registerCompiler("wait", lookup.findConstructor(WaitFireworkNode.class, type));
         } catch (Throwable e) {
             throw new RuntimeException("Failed to initialize compilers", e);
         }

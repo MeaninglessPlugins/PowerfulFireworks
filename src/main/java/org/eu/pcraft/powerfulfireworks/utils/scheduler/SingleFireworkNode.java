@@ -2,10 +2,10 @@ package org.eu.pcraft.powerfulfireworks.utils.scheduler;
 
 import java.util.Map;
 
-final class SingleFireworkNode extends FireworkNode {
-    private double xOff;
-    private double yOff;
-    private double zOff;
+class SingleFireworkNode extends FireworkNode {
+    protected double xOff;
+    protected double yOff;
+    protected double zOff;
 
     @Override
     public void execute(FireworkStartupConfig config) {
