@@ -3,20 +3,29 @@ package org.eu.pcraft.powerfulfireworks.commands;
 import cn.afternode.commons.bukkit.message.MessageBuilder;
 import cn.afternode.commons.bukkit.message.TabBuilder;
 import lombok.Setter;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.eu.pcraft.powerfulfireworks.Permissions;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
+import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkScheduler;
+import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkStartupConfig;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
 public class MainCommand extends Command {
     @Setter
     private String[] fontIdComp = PowerfulFireworks.getInstance().getFonts().keySet().toArray(new String[0]);
+    @Setter
+    private String[] fireworkComp = PowerfulFireworks.getInstance().getSchedulers().keySet().toArray(new String[0]);
 
     public MainCommand() {
         super("fireworks");
@@ -35,6 +44,7 @@ public class MainCommand extends Command {
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "help" -> this.help(sender);
                 case "font" -> this.font(sender, args);
+                case "execute" -> this.execute(sender, args);
                 case "reload" -> this.reload(sender);
             }
         }
@@ -48,6 +58,8 @@ public class MainCommand extends Command {
                 .line().text("help - ").localize("commands.fireworks.help.help");
         if (sender.hasPermission(Permissions.CMD_FIREWORKS_RELOAD))
             mb.line().text("reload - ").localize("commands.fireworks.help.reload");
+        if (sender.hasPermission(Permissions.CMD_FIREWORKS_EXECUTE))
+            mb.line().text("execute - ").localize("commands.fireworks.help.execute");
         mb.send();
     }
 
@@ -78,6 +90,58 @@ public class MainCommand extends Command {
         mb.send();
     }
 
+    private void execute(CommandSender sender, String[] args) { // 0:"execute" 1:<scheduler-id> 2:<x> 3:<y> 4:<z> 5:<world>(optional)
+        MessageBuilder mb = PowerfulFireworks.getInstance().getContext().message(sender);
+        if (args.length < 5) {
+            mb.localize("commands.invalid-args", "fireworks execute <firework> <x> <y> <z> (world)");
+        } else if (sender.hasPermission(Permissions.CMD_FIREWORKS_EXECUTE)) {
+            FireworkScheduler scheduler = PowerfulFireworks.getInstance().getSchedulers().get(args[1]);
+            if (scheduler == null)
+                mb.localize("commands.fireworks.scheduler-not-found");
+            else {
+                double x, y, z;
+                try {
+                    x = Double.parseDouble(args[2]);
+                } catch (NumberFormatException t) {
+                    mb.localize("commands.bad-num").send();
+                    return;
+                }
+                try {
+                    y = Double.parseDouble(args[3]);
+                } catch (NumberFormatException t) {
+                    mb.localize("commands.bad-num").send();
+                    return;
+                }
+                try {
+                    z = Double.parseDouble(args[4]);
+                } catch (NumberFormatException t) {
+                    mb.localize("commands.bad-num").send();
+                    return;
+                }
+                World world = null;
+                if (sender instanceof Player player)    // use player's world
+                    world = player.getWorld();
+                if (args.length >= 6) {
+                    world = Bukkit.getWorld(args[5]);
+                    if (world == null) {    // invalid world
+                        mb.localize("commands.fireworks.execute.world-not-found").send();
+                        return;
+                    }
+                } else if (!(sender instanceof Player)) {    // not player and no world provided
+                    mb.localize("commands.fireworks.execute.world-name").send();
+                    return;
+                }
+
+                FireworkStartupConfig config = new FireworkStartupConfig(new Location(world, x, y, z), Arrays.asList(Bukkit.getOnlinePlayers().toArray(new Player[0])));
+                scheduler.execute(config);
+                mb.localize("commands.fireworks.execute.started", scheduler.getId());
+            }
+        } else {
+            mb.localize("commands.no-permission");
+        }
+        mb.send();
+    }
+
     private void reload(CommandSender sender) {
         MessageBuilder mb = PowerfulFireworks.getInstance().getContext().message(sender);
         if (!sender.hasPermission(Permissions.CMD_FIREWORKS_RELOAD)) {
@@ -97,12 +161,14 @@ public class MainCommand extends Command {
     public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
         TabBuilder builder = new TabBuilder();
         if (args.length == 1) {
-            builder.add(args[0], "help", "reload", "font");
+            builder.add(args[0], "help", "execute", "reload", "font");
         } else if (args.length == 2) {
             String a0 = args[0].toLowerCase(Locale.ROOT);
             String a1 = args[1];
             if (a0.equals("font")) {
                 builder.add(a1, this.fontIdComp);
+            } else if (a0.equals("execute")) {
+                builder.add(a1, this.fireworkComp);
             }
         }
 

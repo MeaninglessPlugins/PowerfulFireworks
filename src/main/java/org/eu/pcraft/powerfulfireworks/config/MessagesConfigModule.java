@@ -9,12 +9,14 @@ public class MessagesConfigModule {
     public static class CommandsOutput {
         String noPermission = "<red>你没有权限执行此操作</red>";
         String invalidArgs = "<red>参数无效，用法：%s</red>";
+        String badNum = "<red>无效数字参数</red>";
 
         @ConfigSerializable
         public static class HelpCommand{
             String header = "--命令帮助--";
             String reload = "重载配置文件";
             String help = "查看命令帮助";
+            String execute = "执行已定义的烟花";
             String font = "预览加载的字体";
         }
 
@@ -33,9 +35,18 @@ public class MessagesConfigModule {
         }
 
         @ConfigSerializable
+        public static class ExecuteCommand {
+            String schedulerNotFound = "<red>找不到烟花定义 %s</red>";
+            String worldName = "<red>需要提供目标世界名称</red>";
+            String worldNotFound = "<red>找不到目标世界</red>";
+            String started = "开始执行烟花 %s";
+        }
+
+        @ConfigSerializable
         public static class FireworkCommands{
             HelpCommand help = new HelpCommand();
             FontCommand font = new FontCommand();
+            ExecuteCommand execute = new ExecuteCommand();
             ReloadCommand reload = new ReloadCommand();
         }
 

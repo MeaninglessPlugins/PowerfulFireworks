@@ -7,7 +7,7 @@ class WaitFireworkNode extends FireworkNode {
 
     @Override
     protected void load(FireworkScheduler scheduler, Map<String, Object> section) {
-        ticks = (long) section.getOrDefault("ticks", 0);
+        ticks = (long)(int) section.getOrDefault("ticks", 1);
     }
 
     @Override
