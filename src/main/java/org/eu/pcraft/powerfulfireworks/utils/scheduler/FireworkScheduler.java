@@ -12,6 +12,7 @@ import org.bukkit.inventory.meta.FireworkMeta;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -43,21 +44,24 @@ public class FireworkScheduler {
 
     private void execute0(FireworkStartupConfig config, AtomicInteger state) {
         final PowerfulFireworks plugin = config.plugin;
+        final Logger logger = config.plugin.getSLF4JLogger();
         plugin.nextTick(() -> {
             int current = state.getAndIncrement();
+
+            // send explosions first
+            if (!config.getFireworkEntities().isEmpty()) {
+                Integer[] idArr = config.getFireworkEntities().toArray(new Integer[0]);
+                int[] cpy = new int[idArr.length];
+                for (int i = 0; i < idArr.length; i++) {
+                    cpy[i] = idArr[i];
+                }
+                FireworkUtil.broadcastFireworkExplosion(config.players, cpy);
+            }
+
             if (current < this.nodes.size()) {
                 FireworkNode node = this.nodes.get(current);
 
-                // send explosions first
-                if (!config.getFireworkEntities().isEmpty()) {
-                    Integer[] idArr = config.getFireworkEntities().toArray(new Integer[0]);
-                    int[] cpy = new int[idArr.length];
-                    for (int i = 0; i < idArr.length; i++) {
-                        cpy[i] = idArr[i];
-                    }
-                    FireworkUtil.broadcastFireworkExplosion(config.players, cpy);
-                }
-
+                logger.info("({}) executing node {}", this.id, node);
                 if (node instanceof WaitFireworkNode wait) { // wait and next
                     plugin.runAfter(wait.ticks, () -> this.execute0(config, state));
                 } else {
@@ -156,6 +160,7 @@ public class FireworkScheduler {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         MethodType type = MethodType.methodType(void.class);
         try {
+            registerCompiler("random", lookup.findConstructor(RandomFireworkNode.class, type));
             registerCompiler("reference", lookup.findConstructor(ReferenceFireworkNode.class, type));
             registerCompiler("single", lookup.findConstructor(SingleFireworkNode.class, type));
             registerCompiler("text", lookup.findConstructor(TextFireworkNode.class, type));
