@@ -1,5 +1,7 @@
 package org.eu.pcraft.powerfulfireworks.utils.scheduler;
 
+import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
+
 import java.util.Map;
 
 class SingleFireworkNode extends FireworkNode {
@@ -9,7 +11,8 @@ class SingleFireworkNode extends FireworkNode {
 
     @Override
     public void execute(FireworkStartupConfig config) {
-        // TODO: implement firework execution
+        // send create and add to entities list
+        config.getFireworkEntities().add(FireworkUtil.broadcastFireworkCreate(config.players, this.preset, config.startupLocation.clone().add(xOff, yOff, zOff)));
     }
 
     @Override

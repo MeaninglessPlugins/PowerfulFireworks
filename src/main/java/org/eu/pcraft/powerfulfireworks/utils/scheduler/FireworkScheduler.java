@@ -10,15 +10,14 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
+import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -39,9 +38,34 @@ public class FireworkScheduler {
     public void execute(FireworkStartupConfig config) {
         config.scheduler = this;
         PowerfulFireworks.getInstance().getSLF4JLogger().info("Executing scheduler {}", id);
-        for (FireworkNode node : this.nodes) {
-            node.execute(config);
-        }
+        this.execute0(config, new AtomicInteger());
+    }
+
+    private void execute0(FireworkStartupConfig config, AtomicInteger state) {
+        final PowerfulFireworks plugin = config.plugin;
+        plugin.nextTick(() -> {
+            int current = state.getAndIncrement();
+            if (current < this.nodes.size()) {
+                FireworkNode node = this.nodes.get(current);
+
+                // send explosions first
+                if (!config.getFireworkEntities().isEmpty()) {
+                    Integer[] idArr = config.getFireworkEntities().toArray(new Integer[0]);
+                    int[] cpy = new int[idArr.length];
+                    for (int i = 0; i < idArr.length; i++) {
+                        cpy[i] = idArr[i];
+                    }
+                    FireworkUtil.broadcastFireworkExplosion(config.players, cpy);
+                }
+
+                if (node instanceof WaitFireworkNode wait) { // wait and next
+                    plugin.runAfter(wait.ticks, () -> this.execute0(config, state));
+                } else {
+                    node.execute(config);   // execute now
+                    this.execute0(config, state);    // schedule next
+                }
+            }
+        });
     }
 
     @Override

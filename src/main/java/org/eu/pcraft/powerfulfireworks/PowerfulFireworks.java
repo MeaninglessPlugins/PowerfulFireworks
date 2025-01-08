@@ -109,7 +109,7 @@ public final class PowerfulFireworks extends JavaPlugin {
         // Plugin shutdown logic
     }
 
-    public void runAfter(int ticks, Runnable runnable) {
+    public void runAfter(long ticks, Runnable runnable) {
         Bukkit.getScheduler().runTaskLater(this, runnable, ticks);
     }
 
@@ -159,8 +159,6 @@ public final class PowerfulFireworks extends JavaPlugin {
                     this.getSLF4JLogger().warn("Error loading font file {} for {}", conf.get(id), id, t);
                 }
             }
-            if (this.mainCommand != null)
-                this.mainCommand.setFontIdComp(this.fonts.keySet().toArray(new String[0])); // Add to font ID completions
         } catch (Throwable t) {
             throw new RuntimeException("Unable to load fonts", t);
         }
@@ -188,5 +186,11 @@ public final class PowerfulFireworks extends JavaPlugin {
             throw new RuntimeException("Unable to load firework schedulers", t);
         }
         this.getSLF4JLogger().info("Loaded {} firework schedulers", this.schedulers.size());
+
+
+        if (this.mainCommand != null) {
+            this.mainCommand.setFontIdComp(this.fonts.keySet().toArray(new String[0])); // Add to font ID completions
+            this.mainCommand.setFireworkComp(this.schedulers.keySet().toArray(new String[0]));  // Add to firework completions
+        }
     }
 }
