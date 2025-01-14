@@ -8,24 +8,28 @@ import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.eu.pcraft.powerfulfireworks.nms.common.*;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class FireworkUtil {
-    Random r = new Random();
-    final PowerfulFireworks pl = PowerfulFireworks.getInstance();
-    public int getMaxDistance(Player p){
-        if(pl.getMainConfig().randomFirework.automatic_distance){
+    public static int getMaxDistance(Player p) {
+        PowerfulFireworks pl = PowerfulFireworks.getInstance();
+        if (pl.getMainConfig().randomFirework.automatic_distance) {
             return pl.getServer().getViewDistance()*16;
         }
         return pl.getMainConfig().randomFirework.distance;
     }
-    public Location getRandomLocation(Location location,int maxDistance){
-        location.setX(location.getX()+(r.nextDouble()*2-1)*maxDistance);
-        location.setZ(location.getZ()+(r.nextDouble()*2-1)*maxDistance);
+
+    public static Location getRandomLocation(Location location,int maxDistance) {
+        final ThreadLocalRandom r = ThreadLocalRandom.current();
+        location.setX(location.getX() + (r.nextDouble() * 2 - 1) * maxDistance);
+        location.setZ(location.getZ() + (r.nextDouble() * 2 - 1) * maxDistance);
         int minY=location.getWorld().getHighestBlockYAt(location);
         location.setY(minY+1);
         return location;
     }
-    public ItemStack getRandomFireworkItem(){
+
+    public static ItemStack getRandomFireworkItem() {
+        final ThreadLocalRandom r = ThreadLocalRandom.current();
         FireworkEffect.Builder fireworkBuilder = FireworkEffect.builder();
 
         //随机颜色
@@ -39,9 +43,11 @@ public final class FireworkUtil {
                 Color.fromRGB(r.nextInt(255), r.nextInt(255), r.nextInt(255)),
                 Color.fromRGB(r.nextInt(255), r.nextInt(255), r.nextInt(255))
         );
+
         //随机形状
         FireworkEffect.Type[] type = FireworkEffect.Type.values();
         fireworkBuilder.with(type[r.nextInt(type.length)]);
+
         //随机效果
         int t = r.nextInt(64);
         if (t % 2 == 0) {
@@ -50,8 +56,10 @@ public final class FireworkUtil {
         if (t % 3 == 0 || t % 13 == 0) {
             fireworkBuilder.withTrail();
         }
+
         //随机能量
         int power = r.nextInt(3) + 2;
+
         //存入Itemstack
         ItemStack fireworkItem = new ItemStack(Material.FIREWORK_ROCKET);
         FireworkMeta fireworkMeta = (FireworkMeta) fireworkItem.getItemMeta();
