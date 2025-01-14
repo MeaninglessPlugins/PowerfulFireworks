@@ -8,7 +8,7 @@ plugins {
 
 group = 'org.eu.pcraft'
 version = '1.0-SNAPSHOT'
-dev = project.property("dev")
+dev = project.dev
 
 allprojects {
     apply plugin: "java"
@@ -95,9 +95,13 @@ shadowJar {
     configurations = [project.configurations.include]
 
     relocate "org.bstats", "org.eu.pcraft.powerfulfireworks.bstats"
+    def dev = Boolean.parseBoolean(project.getProperties().get("dev").toString())
+    println "Dev: ${dev}"
     if (!dev) {
-        for (var s in new String[]{}) {
+        println "Relocation enabled"
+        for (var s in new String[]{"cn", "io", "org.spongepowered"}) {
             relocate s, "org.eu.pcraft.powerfulfireworks.${s}"
+            println "relocate $s -> org.eu.pcraft.powerfulfireworks.${s}"
         }
     }
     manifest {
