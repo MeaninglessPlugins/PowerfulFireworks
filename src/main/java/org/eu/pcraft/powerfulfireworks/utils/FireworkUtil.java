@@ -134,4 +134,55 @@ public final class FireworkUtil {
             }
         }
     }
+
+    public static double normT(double centerX, double centerZ, double tangentX, double tangentZ) {
+        double tx = centerZ - tangentZ;
+        double tz = (tangentX - centerX);
+        return Math.sqrt(tx * tx + tz * tz);
+    }
+
+    /**
+     * Calculates the coordinates of the i-th point on a line segment that is equally divided into `num` parts.
+     * The line segment lies along the tangent of a circle at a given tangent point and is symmetric about the tangent point.
+     *
+     * @param i              The index of the point to calculate (1-based index, where 1 <= i <= num).
+     * @param centerX        Center location X
+     * @param centerZ        Center location Z
+     * @param tangentX       Tangent location X
+     * @param tangentY       Tangent location Y
+     * @param tangentZ       Tangent location Z
+     * @param normT          {@link #normT(double, double, double, double)}
+     * @param t              The total length of the line segment to be divided.
+     * @param num            The number of equal parts to divide the line segment into.
+     * @return               A Location object representing the coordinates of the i-th point on the line segment.
+     *
+     * @throws IllegalArgumentException If the number of divisions (num) is less than or equal to 0,
+     *                                  or if the index i is out of bounds (i < 1 or i > num).
+     */
+    public static Location calculatePoint(int i, World world, double centerX, double centerZ, double tangentX, double tangentY, double tangentZ, double normT, double t, int num) {
+        if (num <= 0) {
+            throw new IllegalArgumentException("Number of divisions (num) must be greater than 0.");
+        }
+        if (i < 1 || i > num) {
+            throw new IllegalArgumentException("Index i must be between 1 and num, inclusive.");
+        }
+
+        // Calculate the tangent direction vector components
+        double tx = centerZ - tangentZ;
+        double tz = (tangentX - centerX);
+
+        if (normT == 0) {
+            throw new IllegalArgumentException("The center and tangent point must not be the same location.");
+        }
+
+        // Calculate the scaling factor for the i-th point
+        double factor = (2 * i - num) / (double) num;
+
+        // Calculate the coordinates of the i-th point
+        double x_i = tangentX + (t / 2) * (tx / normT) * factor;
+        double z_i = tangentZ + (t / 2) * (tz / normT) * factor;
+
+        // Return the calculated Location
+        return new Location(world, x_i, tangentY, z_i);
+    }
 }
