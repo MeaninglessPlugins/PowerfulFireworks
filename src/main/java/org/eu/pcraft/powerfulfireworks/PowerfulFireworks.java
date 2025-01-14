@@ -39,9 +39,9 @@ public final class PowerfulFireworks extends JavaPlugin {
     private NMSProvider nms;
 
     @Getter
-    private ConfigManager configManager;
+    private ConfigManager<PepperConfigModule> configManager;
     @Getter
-    private ConfigManager messagesManager;
+    private ConfigManager<MessagesConfigModule> messagesManager;
 
     @Getter
     private MessagesConfigModule messageConfig = new MessagesConfigModule();
@@ -121,10 +121,12 @@ public final class PowerfulFireworks extends JavaPlugin {
         Path dataPath = getDataFolder().toPath();
 
         //load
-        configManager=new ConfigManager(dataPath.resolve("config.yml"), mainConfig);
-        messagesManager=new ConfigManager(dataPath.resolve("messages.yml"), messageConfig);
+        configManager=new ConfigManager<>(dataPath.resolve("config.yml"), new PepperConfigModule());
+        messagesManager=new ConfigManager<>(dataPath.resolve("messages.yml"), messageConfig);
         configManager.loadConfig();
         messagesManager.loadConfig();
+        this.mainConfig = configManager.getConfigModule();
+
         //message
         try {
             this.context.setLocalizations(new ConfigurationLocalizations(this.context.loadConfiguration("messages.yml")));
