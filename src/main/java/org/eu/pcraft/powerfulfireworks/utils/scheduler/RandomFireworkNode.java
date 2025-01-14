@@ -50,13 +50,12 @@ public class RandomFireworkNode extends FireworkNode {
     @Override
     public void execute(FireworkStartupConfig config) {
         ThreadLocalRandom rd = ThreadLocalRandom.current();
-        FireworkUtil util = new FireworkUtil(); // why
         for (int i = 0; i < count; i++) {
             ItemStack stack;
             if (this.single)
                 stack = this.presets.get(0);
             else if (this.full)
-                stack = util.getRandomFireworkItem();
+                stack = FireworkUtil.getRandomFireworkItem();
             else
                 stack = presets.get(rd.nextInt(presets.size()));
 
