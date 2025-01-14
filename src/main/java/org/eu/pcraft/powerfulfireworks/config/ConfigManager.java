@@ -1,20 +1,12 @@
 package org.eu.pcraft.powerfulfireworks.config;
 
 import lombok.Getter;
-import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
-import org.spongepowered.configurate.ConfigurationOptions;
-import org.spongepowered.configurate.objectmapping.meta.Processor;
 import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
-import javax.inject.Inject;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-
-import static org.spongepowered.configurate.objectmapping.meta.Processor.comments;
 
 public class ConfigManager<T> {
     CommentedConfigurationNode node;

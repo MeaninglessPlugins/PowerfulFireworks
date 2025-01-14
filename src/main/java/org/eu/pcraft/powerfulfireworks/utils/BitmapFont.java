@@ -40,19 +40,6 @@ public class BitmapFont {
         // create gap string
         String gapStr = "0".repeat(Math.max(1, gap));
 
-//        // First pass: calculate total width
-//        int totalWidth = 0;
-//        for (int i = 0; i < text.length(); i++) {
-//            char c = text.charAt(i);
-//            CharBitmap charBitmap = this.getCharacter(c);
-//            if (charBitmap != null) {
-//                totalWidth += charBitmap.ch[0].length();
-//                if (i < text.length() - 1) {
-//                    totalWidth += gap;
-//                }
-//            }
-//        }
-
         StringBuilder[] builders = new StringBuilder[charHeight];
 
         // Second pass: copy characters
@@ -123,8 +110,6 @@ public class BitmapFont {
                 else if (inBitmap && currentBitmap != null && currentRow < bitmapHeight) {
                     // Convert hex string to binary representation
                     currentBitmap.chars[currentRow] = hexToBinary(line, bitmapWidth);
-//                    System.out.println(hexToBinary(line, bitmapWidth));
-//                    System.out.println(currentBitmap.ch[currentRow]);
                     maxCurrentRow = max(currentRow,maxCurrentRow);
                     currentRow++;
                 }
