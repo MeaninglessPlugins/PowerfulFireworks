@@ -1,6 +1,5 @@
 package org.eu.pcraft.powerfulfireworks.utils;
 
-import it.unimi.dsi.fastutil.Arrays;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -21,6 +20,7 @@ public class BitmapFont {
 
         CharBitmap(int length){
             chars = new String[length];
+            Arrays.fill(this.chars, "");
         }
     }
 
@@ -38,7 +38,7 @@ public class BitmapFont {
         }
 
         // create gap string
-        String gapStr = " ".repeat(Math.max(1, gap));
+        String gapStr = "0".repeat(Math.max(1, gap));
 
 //        // First pass: calculate total width
 //        int totalWidth = 0;
@@ -58,8 +58,8 @@ public class BitmapFont {
         // Second pass: copy characters
         for (char c : text.toCharArray()) {
             CharBitmap charBitmap = this.getCharacter(c);
-            if (charBitmap != null) {
-                for(int i = 0; i < charHeight; i++){
+            if (charBitmap != null && charBitmap.chars.length > 0) {
+                for (int i = 0; i < charHeight; i++) {
                     StringBuilder sb = builders[i];
                     if (sb == null) {
                         sb = new StringBuilder();
@@ -130,6 +130,19 @@ public class BitmapFont {
                 }
             }
         }
+
+        // reformat fonts
+        for (Map.Entry<Character, CharBitmap> ent : fontMap.entrySet()) {
+            CharBitmap value = ent.getValue();
+            if (value.chars.length > 0 && value.chars.length < maxCurrentRow) {   // pad header
+                String[] reformatted = new String[maxCurrentRow];
+                int width = value.chars[0].length();
+                System.arraycopy(value.chars, 0, reformatted, maxCurrentRow - value.chars.length, value.chars.length);
+                Arrays.fill(reformatted, 0, maxCurrentRow - value.chars.length, "0".repeat(width));
+                ent.setValue(new CharBitmap(reformatted));
+            }
+        }
+
         return new BitmapFont(fontMap, maxCurrentRow);
     }
 
