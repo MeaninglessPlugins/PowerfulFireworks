@@ -1,5 +1,6 @@
 package org.eu.pcraft.powerfulfireworks.config;
 
+import lombok.Getter;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
@@ -15,23 +16,25 @@ import java.nio.file.Path;
 
 import static org.spongepowered.configurate.objectmapping.meta.Processor.comments;
 
-public class ConfigManager {
+public class ConfigManager<T> {
     CommentedConfigurationNode node;
 
     YamlConfigurationLoader loader;
 
-    Class configType;
-    Object configModule;
+    Class<T> configType;
 
-    public ConfigManager(Path src,Object cm){
+    @Getter
+    T configModule;
+
+    public ConfigManager(Path src, T cm){
         loader = YamlConfigurationLoader.builder()
                 .nodeStyle(NodeStyle.BLOCK)
                 .indent(2)
                 .path(src) // Set where we will load and save to
                 .build();
         node=loader.createNode();
-        configType=cm.getClass();
-        configModule=cm;
+        configType = (Class<T>) cm.getClass();
+        configModule = cm;
     }
     public void loadConfig(){
         try {
