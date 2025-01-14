@@ -61,7 +61,8 @@ public class FireworkScheduler {
             if (current < this.nodes.size()) {
                 FireworkNode node = this.nodes.get(current);
 
-                logger.info("({}) executing node {}", this.id, node);
+                if (plugin.mainConfig.debug)
+                    logger.info("({}) executing node {}", this.id, node);
                 if (node instanceof WaitFireworkNode wait) { // wait and next
                     plugin.runAfter(wait.ticks, () -> this.execute0(config, state));
                 } else {
