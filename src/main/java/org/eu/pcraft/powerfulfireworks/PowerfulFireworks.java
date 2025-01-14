@@ -64,7 +64,7 @@ public final class PowerfulFireworks extends JavaPlugin {
         loadConfigurations();
         if(mainConfig.debug){
             getLogger().warning("***WARNING***");
-            getLogger().warning("You are using the DEBUGING mode!");
+            getLogger().warning("You are using the DEBUG mode!");
             getLogger().warning("To make it disabled, change 'debug' in config.yml into false!");
         }
 

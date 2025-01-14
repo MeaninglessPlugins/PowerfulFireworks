@@ -11,7 +11,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class FireworkUtil {
-    public static int getMaxDistance(Player p) {
+    public static int getMaxDistance() {
         PowerfulFireworks pl = PowerfulFireworks.getInstance();
         if (pl.getMainConfig().randomFirework.automatic_distance) {
             return pl.getServer().getViewDistance()*16;

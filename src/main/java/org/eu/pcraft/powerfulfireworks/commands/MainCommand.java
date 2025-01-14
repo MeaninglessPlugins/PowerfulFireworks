@@ -21,10 +21,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+@Setter
 public class MainCommand extends Command {
-    @Setter
     private String[] fontIdComp = PowerfulFireworks.getInstance().getFonts().keySet().toArray(new String[0]);
-    @Setter
     private String[] fireworkComp = PowerfulFireworks.getInstance().getSchedulers().keySet().toArray(new String[0]);
 
     public MainCommand() {
@@ -46,6 +45,7 @@ public class MainCommand extends Command {
                 case "font" -> this.font(sender, args);
                 case "execute" -> this.execute(sender, args);
                 case "reload" -> this.reload(sender);
+                default -> this.help(sender);
             }
         }
 
@@ -60,6 +60,8 @@ public class MainCommand extends Command {
             mb.line().text("reload - ").localize("commands.fireworks.help.reload");
         if (sender.hasPermission(Permissions.CMD_FIREWORKS_EXECUTE))
             mb.line().text("execute - ").localize("commands.fireworks.help.execute");
+        if (sender.hasPermission(Permissions.CMD_FIREWORKS_FONT))
+            mb.line().text("font - ").localize("commands.fireworks.help.font");
         mb.send();
     }
 
