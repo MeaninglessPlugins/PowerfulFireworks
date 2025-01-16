@@ -5,6 +5,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.eu.pcraft.powerfulfireworks.Permissions;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.eu.pcraft.powerfulfireworks.nms.common.*;
 import org.jetbrains.annotations.NotNull;
@@ -19,9 +20,16 @@ public class TestCommand extends Command {
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         if (sender instanceof Player player) {
+            final PowerfulFireworks pl = PowerfulFireworks.getInstance();
+            if (!sender.hasPermission(Permissions.CMD_TEST)) {
+                pl.getContext().message(sender)
+                        .localize("commands.no-permission")
+                        .send();
+                return true;
+            }
+
             final ItemStack item = player.getInventory().getItemInMainHand();
             if (item.getType() == Material.FIREWORK_ROCKET) {   // check rocket
-                final PowerfulFireworks pl = PowerfulFireworks.getInstance();
                 final NMSProvider provider = pl.getNms();
                 final int id = provider.allocateEntityId();
                 UUID uuid = UUID.randomUUID();

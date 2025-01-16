@@ -70,21 +70,25 @@ public class MainCommand extends Command {
         if (args.length == 1) {
             mb.localize("commands.fireworks.font.available").line().text(String.join(", ", PowerfulFireworks.getInstance().getFonts().keySet()), Color.GREEN);
         } else if (args.length == 3) {
-            BitmapFont font = PowerfulFireworks.getInstance().getFonts().get(args[1].toLowerCase(Locale.ROOT));
-            if (font == null) {
-                mb.localize("commands.fireworks.font.not-found");   // not found
-            } else {
-                BitmapFont.CharBitmap character = font.getCharacter(args[2].charAt(0));
-                // Render to string
-                mb.localize("commands.fireworks.font.preview", String.valueOf(args[2].charAt(0)), args[1]);
+            if (sender.hasPermission(Permissions.CMD_FIREWORKS_FONT)) {
+                BitmapFont font = PowerfulFireworks.getInstance().getFonts().get(args[1].toLowerCase(Locale.ROOT));
+                if (font == null) {
+                    mb.localize("commands.fireworks.font.not-found");   // not found
+                } else {
+                    BitmapFont.CharBitmap character = font.getCharacter(args[2].charAt(0));
+                    // Render to string
+                    mb.localize("commands.fireworks.font.preview", String.valueOf(args[2].charAt(0)), args[1]);
 
-                for (String aChar : character.getChars()) {
-                    if (aChar == null) {
-                        mb.line().localize("commands.fireworks.font.no-char", args[1]);    // no such character
-                        break;
+                    for (String aChar : character.getChars()) {
+                        if (aChar == null) {
+                            mb.line().localize("commands.fireworks.font.no-char", args[1]);    // no such character
+                            break;
+                        }
+                        mb.emptyLine().text(aChar.replace('0', ' ').replace('1', '#'));
                     }
-                    mb.emptyLine().text(aChar.replace('0', ' ').replace('1', '#'));
                 }
+            } else {    // no permission
+                mb.localize("commands.no-permission");
             }
         } else {
             mb.localize("commands.fireworks.invalid-args", "fireworks font (font-id) (character)");
