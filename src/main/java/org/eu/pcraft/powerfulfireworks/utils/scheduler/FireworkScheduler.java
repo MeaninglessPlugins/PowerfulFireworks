@@ -141,6 +141,7 @@ public class FireworkScheduler {
                     .collect(Collectors.toList()));
         builder.flicker((boolean) section.getOrDefault("flicker", false));
         builder.trail((boolean) section.getOrDefault("trail", false));
+        builder.with(FireworkEffect.Type.valueOf((String) section.getOrDefault("type", "BALL")));
         return builder.build();
     }
 
