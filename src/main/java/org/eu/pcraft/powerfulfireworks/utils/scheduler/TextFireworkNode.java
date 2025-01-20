@@ -4,6 +4,7 @@ import com.google.common.base.Verify;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSAddEntityPacket;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSEntityDataPacket;
@@ -66,10 +67,14 @@ class TextFireworkNode extends SingleFireworkNode {
             this.send(nms, config, id, uuid);
         }
 
-        // Add IDs to queue
-        for (int i : id) {
-            config.fireworkEntities.add(i);
-        }
+        // make an explosion task
+        BukkitRunnable fireworkExplosionTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                FireworkUtil.broadcastFireworkExplosion(config.players, id);
+            }
+        };
+        fireworkExplosionTask.runTaskLater(config.plugin, flyTime);
     }
 
     private void sendRotate(NMSProvider nms, FireworkStartupConfig config, int[] id, UUID[] uuid) {

@@ -21,5 +21,4 @@ public class FireworkStartupConfig {
     final Location startupLocation;
     final List<Player> players;
 
-    final List<Integer> fireworkEntities = new ArrayList<>();
 }
