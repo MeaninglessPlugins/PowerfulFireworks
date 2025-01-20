@@ -14,6 +14,7 @@ public class PepperConfigModule {
 
     @ConfigSerializable
     public static class RandomFirework{
+        public boolean enabled = true;
         public int min_delay = 10;
         public int max_delay = 20;
         public boolean automatic_distance = true;
