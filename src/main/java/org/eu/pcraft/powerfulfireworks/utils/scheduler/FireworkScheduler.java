@@ -48,16 +48,6 @@ public class FireworkScheduler {
         plugin.nextTick(() -> {
             int current = state.getAndIncrement();
 
-            // send explosions first
-            if (!config.getFireworkEntities().isEmpty()) {
-                Integer[] idArr = config.getFireworkEntities().toArray(new Integer[0]);
-                int[] cpy = new int[idArr.length];
-                for (int i = 0; i < idArr.length; i++) {
-                    cpy[i] = idArr[i];
-                }
-                FireworkUtil.broadcastFireworkExplosion(config.players, cpy);
-            }
-
             if (current < this.nodes.size()) {
                 FireworkNode node = this.nodes.get(current);
 

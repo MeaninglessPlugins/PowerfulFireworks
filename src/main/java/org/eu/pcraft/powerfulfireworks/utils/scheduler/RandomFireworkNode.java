@@ -1,6 +1,7 @@
 package org.eu.pcraft.powerfulfireworks.utils.scheduler;
 
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 
 import java.util.ArrayList;
@@ -62,11 +63,20 @@ public class RandomFireworkNode extends FireworkNode {
             double xOff = rd.nextDouble(minX, maxX);
             double yOff = rd.nextDouble(minY, maxY);
             double zOff = rd.nextDouble(minZ, maxZ);
-            config.getFireworkEntities().add(FireworkUtil.broadcastFireworkCreate(
+            // send create and add to id list
+            int[] id = new int[]{FireworkUtil.broadcastFireworkCreate(
                     config.players,
                     stack,
-                    config.startupLocation.clone().add(xOff, yOff, zOff)
-            ));
+                    config.startupLocation.clone().add(xOff, yOff, zOff))};
+
+            // make an explosion task
+            BukkitRunnable fireworkExplosionTask = new BukkitRunnable() {
+                @Override
+                public void run() {
+                    FireworkUtil.broadcastFireworkExplosion(config.players, id);
+                }
+            };
+            fireworkExplosionTask.runTaskLater(config.plugin, flyTime);
         }
     }
 }
