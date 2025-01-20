@@ -99,7 +99,7 @@ shadowJar {
     println "Dev: ${dev}"
     if (!dev) {
         println "Relocation enabled"
-        for (var s in new String[]{"cn", "io", "org.spongepowered"}) {
+        for (var s in new String[]{"cn.afternode", "io.leangen", "org.spongepowered"}) {
             relocate s, "org.eu.pcraft.powerfulfireworks.${s}"
             println "relocate $s -> org.eu.pcraft.powerfulfireworks.${s}"
         }
