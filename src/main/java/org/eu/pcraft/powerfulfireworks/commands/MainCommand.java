@@ -164,7 +164,7 @@ public class MainCommand extends Command {
                     return;
                 }
 
-                FireworkStartupConfig config = new FireworkStartupConfig(new Location(world, x, y, z), Arrays.asList(Bukkit.getOnlinePlayers().toArray(new Player[0])));
+                FireworkStartupConfig config = new FireworkStartupConfig(new Location(world, x, y, z), Arrays.asList(world.getPlayers().toArray(new Player[0])));
                 scheduler.execute(config);
                 mb.localize("commands.fireworks.execute.started", scheduler.getId());
             }
