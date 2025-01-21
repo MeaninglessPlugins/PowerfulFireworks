@@ -4,7 +4,7 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
 @ConfigSerializable
 public class MessagesConfigModule {
-    String prefix = "<gray>[</gray><gold>烟花</gold><gray>]</gray> ";
+    String prefix = "<gray>[</gray><gradient:#ffff55:#ff5555>PowerfulFireworks</gradient><gray>]</gray> ";
     @ConfigSerializable
     public static class CommandsOutput {
         String noPermission = "<red>你没有权限执行此操作</red>";
@@ -43,11 +43,17 @@ public class MessagesConfigModule {
         }
 
         @ConfigSerializable
+        public static class ToggleCommand{
+            String toggleMessage = "当前随机烟花状态: %s";
+        }
+
+        @ConfigSerializable
         public static class FireworkCommands{
             HelpCommand help = new HelpCommand();
             FontCommand font = new FontCommand();
             ExecuteCommand execute = new ExecuteCommand();
             ReloadCommand reload = new ReloadCommand();
+            ToggleCommand toggle = new ToggleCommand();
         }
 
         FireworkCommands fireworks = new FireworkCommands();
