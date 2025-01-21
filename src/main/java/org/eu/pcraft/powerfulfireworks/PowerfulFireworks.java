@@ -217,12 +217,12 @@ public final class PowerfulFireworks extends JavaPlugin {
         }
         if(mainConfig.randomFirework.enabled){
             timer=new FireworksTimer(
-                    mainConfig.randomFirework.min_delay,
-                    mainConfig.randomFirework.max_delay, instance);
+                    mainConfig.randomFirework.delay.minimum,
+                    mainConfig.randomFirework.delay.maximum, instance);
             timer.start();
         }
         // permission
-        if(mainConfig.randomFirework.open_default){
+        if(mainConfig.randomFirework.turnOnDefaultly){
             Permissions.SWITCHES_RANDOMFIREWORKS.setDefault(PermissionDefault.TRUE);
         }
         else{
