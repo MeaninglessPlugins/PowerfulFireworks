@@ -202,8 +202,8 @@ public final class PowerfulFireworks extends JavaPlugin {
                 timer.stop();
             }
             timer=new FireworksTimer(
-                    mainConfig.randomFirework.max_delay,
-                    mainConfig.randomFirework.min_delay, instance);
+                    mainConfig.randomFirework.min_delay,
+                    mainConfig.randomFirework.max_delay, instance);
             timer.start();
         }
         // permission
