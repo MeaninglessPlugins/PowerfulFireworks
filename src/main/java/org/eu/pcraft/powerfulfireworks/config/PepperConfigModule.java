@@ -1,7 +1,7 @@
 package org.eu.pcraft.powerfulfireworks.config;
 
 import com.google.common.collect.Maps;
-import lombok.AllArgsConstructor;
+import org.eu.pcraft.powerfulfireworks.utils.Pair;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.meta.Comment;
 
@@ -13,19 +13,13 @@ public class PepperConfigModule {
     @Comment("Written by:Pepper&H3xadecimal") String b;
     public boolean debug = false;
     @ConfigSerializable
-    @AllArgsConstructor
-    public static class Interval{
-        public int minimum;
-        public int maximum;
-    }
-    @ConfigSerializable
     public static class RandomFirework{
         public boolean enabled = true;
         public boolean turnOnDefaultly = true;
-        public Interval delay=new Interval(10, 20);
+        public Pair<Integer> delay=new Pair<>(10, 20);
         public boolean automaticDistance = true;
         public int distance = 20;
-        public Interval flyTime = new Interval(30,70);
+        public Pair<Integer> flyTime = new Pair<>(30,70);
     }
 
     public RandomFirework randomFirework= new RandomFirework();
