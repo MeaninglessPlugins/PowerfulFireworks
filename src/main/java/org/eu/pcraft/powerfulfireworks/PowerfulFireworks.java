@@ -9,12 +9,14 @@ import org.bukkit.Bukkit;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.command.CommandMap;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.eu.pcraft.powerfulfireworks.commands.MainCommand;
 import org.eu.pcraft.powerfulfireworks.commands.TestCommand;
 import org.eu.pcraft.powerfulfireworks.config.ConfigManager;
 import org.eu.pcraft.powerfulfireworks.config.MessagesConfigModule;
 import org.eu.pcraft.powerfulfireworks.config.PepperConfigModule;
+import org.eu.pcraft.powerfulfireworks.hook.VaultHook;
 import org.eu.pcraft.powerfulfireworks.nms.NMSSelector;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSProvider;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
@@ -50,6 +52,8 @@ public final class PowerfulFireworks extends JavaPlugin {
     @Getter private Map<String, BitmapFont> fonts;
     @Getter private Map<String, FireworkScheduler> schedulers;
 
+    @Getter VaultHook vaultHook = new VaultHook();
+
     private MainCommand mainCommand;
 
     FireworksTimer timer;
@@ -75,6 +79,7 @@ public final class PowerfulFireworks extends JavaPlugin {
         } else {
             getSLF4JLogger().info("Using NMS version {}", this.nms.getVersion());
         }
+
     }
 
     @Override
@@ -94,21 +99,29 @@ public final class PowerfulFireworks extends JavaPlugin {
         this.mainCommand = new MainCommand();
         map.register("fireworks", this.mainCommand);
 
-        //Listener
+        // Listener
         Bukkit.getPluginManager().registerEvents(new EventListener(), instance);
-        //Timer
-        if(mainConfig.randomFirework.enabled){
-            timer=new FireworksTimer(
-                    mainConfig.randomFirework.min_delay,
-                    mainConfig.randomFirework.max_delay, instance);
-            timer.start();
+
+        // hook
+        boolean isHookingSuccessfully = vaultHook.setup();
+        if(isHookingSuccessfully){
+            getLogger().info("Successfully hook into Vault");
         }
+        else{
+            getLogger().severe("Failed to hook into Vault");
+            Bukkit.getPluginManager().disablePlugin(this);
+        }
+
+        // others
+        applyConfigurations();
+
     }
 
     @Override
     public void onDisable() {
-        timer.stop();
-        // Plugin shutdown logic
+        //stop timer
+        if(timer!=null)
+            timer.stop();
     }
 
     public void runAfter(long ticks, Runnable runnable) {
@@ -123,7 +136,7 @@ public final class PowerfulFireworks extends JavaPlugin {
         Path dataPath = getDataFolder().toPath();
 
         //load
-        configManager=new ConfigManager<>(dataPath.resolve("config.yml"), new PepperConfigModule());
+        configManager=new ConfigManager<>(dataPath.resolve("config.yml"), mainConfig);
         messagesManager=new ConfigManager<>(dataPath.resolve("messages.yml"), messageConfig);
         configManager.loadConfig();
         messagesManager.loadConfig();
@@ -195,6 +208,25 @@ public final class PowerfulFireworks extends JavaPlugin {
         if (this.mainCommand != null) {
             this.mainCommand.setFontIdComp(this.fonts.keySet().toArray(new String[0])); // Add to font ID completions
             this.mainCommand.setFireworkComp(this.schedulers.keySet().toArray(new String[0]));  // Add to firework completions
+        }
+    }
+    public void applyConfigurations(){
+        // timer
+        if(timer!=null){
+            timer.stop();
+        }
+        if(mainConfig.randomFirework.enabled){
+            timer=new FireworksTimer(
+                    mainConfig.randomFirework.min_delay,
+                    mainConfig.randomFirework.max_delay, instance);
+            timer.start();
+        }
+        // permission
+        if(mainConfig.randomFirework.open_default){
+            Permissions.SWITCHES_RANDOMFIREWORKS.setDefault(PermissionDefault.TRUE);
+        }
+        else{
+            Permissions.SWITCHES_RANDOMFIREWORKS.setDefault(PermissionDefault.FALSE);
         }
     }
 }

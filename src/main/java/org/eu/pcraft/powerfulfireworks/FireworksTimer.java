@@ -23,6 +23,8 @@ public class FireworksTimer extends PepperRollTimer {
         NMSRemoveEntityPacket removePacket = provider.createRemoveEntityPacket(entityId);
         final Random rd = new Random();
         for(Player player:plugin.getServer().getOnlinePlayers()){
+            if(!player.hasPermission(Permissions.SWITCHES_RANDOMFIREWORKS))
+                continue;
             PowerfulFireworks.getInstance().nextTick(() -> {
                 UUID uuid = UUID.randomUUID();
                 provider.sendAddEntity(player, provider.createAddFireworkEntityPacket(entityId, uuid, FireworkUtil.getRandomLocation(player.getLocation(), FireworkUtil.getMaxDistance())), fakeFirework);
