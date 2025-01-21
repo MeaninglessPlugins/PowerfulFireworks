@@ -2,7 +2,6 @@ package org.eu.pcraft.powerfulfireworks;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.permissions.PermissionDefault;
 import org.eu.pcraft.powerfulfireworks.nms.common.*;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 
@@ -24,7 +23,7 @@ public class FireworksTimer extends PepperRollTimer {
         NMSRemoveEntityPacket removePacket = provider.createRemoveEntityPacket(entityId);
         final Random rd = new Random();
         for(Player player:plugin.getServer().getOnlinePlayers()){
-            if(!player.hasPermission(Permissions.TOGGLE_RANDOMFIREWORKS))
+            if(!player.hasPermission(Permissions.SWITCHES_RANDOMFIREWORKS))
                 continue;
             PowerfulFireworks.getInstance().nextTick(() -> {
                 UUID uuid = UUID.randomUUID();

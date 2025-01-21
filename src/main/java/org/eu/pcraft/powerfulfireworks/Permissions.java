@@ -13,12 +13,12 @@ public class Permissions {
     public static final Permission CMD_FIREWORKS_RELOAD = new Permission(named("cmd", "fireworks", "reload"));
     public static final Permission CMD_TEST = new Permission(named("cmd", "test"));
     public static final Permission CMD_FIREWORKS_TOGGLE = new Permission(named("cmd", "fireworks", "toggle"));
-    public static final Permission TOGGLE = new Permission("toggle");
-    public static final Permission TOGGLE_RANDOMFIREWORKS = new Permission("toggle", "randomfireworks");
+    public static final Permission SWITCHES = new Permission(named("switches"));
+    public static final Permission SWITCHES_RANDOMFIREWORKS = new Permission(named("switches", "randomfireworks"));
 
     public static void register() {
-        TOGGLE.addParent(ROOT, true);
-        TOGGLE_RANDOMFIREWORKS.addParent(TOGGLE, true);
+        SWITCHES.addParent(ROOT, true);
+        SWITCHES_RANDOMFIREWORKS.addParent(SWITCHES, true);
         CMD.addParent(ROOT, true);
         CMD_FIREWORKS.addParent(CMD, true);
         CMD_FIREWORKS_FONT.addParent(CMD_FIREWORKS, true);
@@ -29,7 +29,7 @@ public class Permissions {
     }
 
     private static String named(String... nodes) {
-        StringBuilder sb = new StringBuilder("powerfullfireworks");
+        StringBuilder sb = new StringBuilder("powerfulfireworks");
         for (String node : nodes) {
             sb.append('.').append(node);
         }

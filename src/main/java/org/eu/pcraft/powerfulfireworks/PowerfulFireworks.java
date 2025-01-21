@@ -16,6 +16,7 @@ import org.eu.pcraft.powerfulfireworks.commands.TestCommand;
 import org.eu.pcraft.powerfulfireworks.config.ConfigManager;
 import org.eu.pcraft.powerfulfireworks.config.MessagesConfigModule;
 import org.eu.pcraft.powerfulfireworks.config.PepperConfigModule;
+import org.eu.pcraft.powerfulfireworks.hook.VaultHook;
 import org.eu.pcraft.powerfulfireworks.nms.NMSSelector;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSProvider;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
@@ -51,6 +52,8 @@ public final class PowerfulFireworks extends JavaPlugin {
     @Getter private Map<String, BitmapFont> fonts;
     @Getter private Map<String, FireworkScheduler> schedulers;
 
+    @Getter VaultHook vaultHook = new VaultHook();
+
     private MainCommand mainCommand;
 
     FireworksTimer timer;
@@ -76,6 +79,7 @@ public final class PowerfulFireworks extends JavaPlugin {
         } else {
             getSLF4JLogger().info("Using NMS version {}", this.nms.getVersion());
         }
+
     }
 
     @Override
@@ -98,8 +102,19 @@ public final class PowerfulFireworks extends JavaPlugin {
         // Listener
         Bukkit.getPluginManager().registerEvents(new EventListener(), instance);
 
+        // hook
+        boolean isHookingSuccessfully = vaultHook.setup();
+        if(isHookingSuccessfully){
+            getLogger().info("Successfully hook into Vault");
+        }
+        else{
+            getLogger().severe("Failed to hook into Vault");
+            Bukkit.getPluginManager().disablePlugin(this);
+        }
+
         // others
         applyConfigurations();
+
     }
 
     @Override
@@ -121,7 +136,7 @@ public final class PowerfulFireworks extends JavaPlugin {
         Path dataPath = getDataFolder().toPath();
 
         //load
-        configManager=new ConfigManager<>(dataPath.resolve("config.yml"), new PepperConfigModule());
+        configManager=new ConfigManager<>(dataPath.resolve("config.yml"), mainConfig);
         messagesManager=new ConfigManager<>(dataPath.resolve("messages.yml"), messageConfig);
         configManager.loadConfig();
         messagesManager.loadConfig();
@@ -197,10 +212,10 @@ public final class PowerfulFireworks extends JavaPlugin {
     }
     public void applyConfigurations(){
         // timer
+        if(timer!=null){
+            timer.stop();
+        }
         if(mainConfig.randomFirework.enabled){
-            if(timer!=null){
-                timer.stop();
-            }
             timer=new FireworksTimer(
                     mainConfig.randomFirework.min_delay,
                     mainConfig.randomFirework.max_delay, instance);
@@ -208,10 +223,10 @@ public final class PowerfulFireworks extends JavaPlugin {
         }
         // permission
         if(mainConfig.randomFirework.open_default){
-            Permissions.TOGGLE_RANDOMFIREWORKS.setDefault(PermissionDefault.TRUE);
+            Permissions.SWITCHES_RANDOMFIREWORKS.setDefault(PermissionDefault.TRUE);
         }
         else{
-            Permissions.TOGGLE_RANDOMFIREWORKS.setDefault(PermissionDefault.FALSE);
+            Permissions.SWITCHES_RANDOMFIREWORKS.setDefault(PermissionDefault.FALSE);
         }
     }
 }

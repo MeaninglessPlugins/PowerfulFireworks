@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionAttachment;
 import org.eu.pcraft.powerfulfireworks.Permissions;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
+import org.eu.pcraft.powerfulfireworks.hook.VaultHook;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkScheduler;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkStartupConfig;
@@ -55,8 +56,27 @@ public class MainCommand extends Command {
     }
 
     private void toggle(CommandSender sender){
-        PermissionAttachment permissionAttachment=new PermissionAttachment(PowerfulFireworks.getInstance(),sender);
-        permissionAttachment.setPermission(Permissions.TOGGLE, !sender.hasPermission(Permissions.TOGGLE));
+        if(!(sender instanceof Player)){
+            PowerfulFireworks.getInstance().getContext().message(sender)
+                    .localize("commands.no-permission")
+                    .send();
+            return;
+        }
+        if(!sender.hasPermission(Permissions.CMD_FIREWORKS_TOGGLE)){
+            PowerfulFireworks.getInstance().getContext().message(sender)
+                    .localize("commands.no-permission")
+                    .send();
+            return;
+        }
+        VaultHook vaultHook=PowerfulFireworks.getInstance().getVaultHook();
+        if(vaultHook.getPerms().has((Player) sender, Permissions.SWITCHES_RANDOMFIREWORKS.getName())){
+            vaultHook.getPerms().playerRemove((Player) sender, Permissions.SWITCHES_RANDOMFIREWORKS.getName());
+        }else{
+            vaultHook.getPerms().playerAdd((Player) sender, Permissions.SWITCHES_RANDOMFIREWORKS.getName());
+        }
+        PowerfulFireworks.getInstance().getContext().message(sender)
+                .localize("commands.fireworks.toggle.toggle-message", sender.hasPermission(Permissions.SWITCHES_RANDOMFIREWORKS)?"<green>ON":"<red>OFF")
+                .send();
     }
     private void help(CommandSender sender) {
         MessageBuilder mb = PowerfulFireworks.getInstance().getContext().message(sender);
