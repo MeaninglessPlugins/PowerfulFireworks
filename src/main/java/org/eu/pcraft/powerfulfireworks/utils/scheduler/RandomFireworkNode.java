@@ -25,21 +25,18 @@ public class RandomFireworkNode extends FireworkNode {
     }
     @Override
     protected void load(FireworkScheduler scheduler, Map<String, Object> section) {
-        this.full = (boolean) section.getOrDefault("full", false);  // enable full random mode
-        if (!this.full) {
-            // presets
-            List<String> pr = (List<String>) section.get("presets");
-            if (pr != null) {
-                for (String s : pr) {
-                    ItemStack p = scheduler.getPreset(s);
-                    if (p == null)
-                        throw new IllegalArgumentException("preset " + s);
-                    presets.add(p);
+        // presets
+        List<String> pr = (List<String>) section.get("presets");
+        if (pr != null) {
+            for (String s : pr) {
+                ItemStack p = scheduler.getPreset(s);
+                   if (p == null)
+                       throw new IllegalArgumentException("preset " + s);
+                   presets.add(p);
                 }
-            }
-            single = this.presets.size() != 1;
         }
-
+        single = this.presets.size() == 1;
+        this.full = this.presets.isEmpty();
         this.count = (int) section.getOrDefault("count", 1);
         this.X = getDoubleInterval(section,"X");
         this.Y = getDoubleInterval(section,"Y");
