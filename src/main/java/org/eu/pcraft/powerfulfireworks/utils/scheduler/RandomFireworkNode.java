@@ -3,8 +3,10 @@ package org.eu.pcraft.powerfulfireworks.utils.scheduler;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
+import org.eu.pcraft.powerfulfireworks.utils.Pair;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -15,13 +17,12 @@ public class RandomFireworkNode extends FireworkNode {
     boolean full = false;
 
     int count = 1;
-    double maxX = 0.0;
-    double maxY = 0.0;
-    double maxZ = 0.0;
-    double minX = 0.0;
-    double minY = 0.0;
-    double minZ = 0.0;
-
+    Pair<Double> X = new Pair<>(0.0,0.0);
+    Pair<Double> Y = new Pair<>(0.0,0.0);
+    Pair<Double> Z = new Pair<>(0.0,0.0);
+    protected Pair<Double> getDoubleInterval(Map<String, Object> section, String key){
+        return new Pair<>((LinkedHashMap<String, Double>) section.getOrDefault(key, new Pair<Double>(0.0, 0.0)));
+    }
     @Override
     protected void load(FireworkScheduler scheduler, Map<String, Object> section) {
         this.full = (boolean) section.getOrDefault("full", false);  // enable full random mode
@@ -40,12 +41,9 @@ public class RandomFireworkNode extends FireworkNode {
         }
 
         this.count = (int) section.getOrDefault("count", 1);
-        this.maxX = (double) section.getOrDefault("maxX", 0.0);
-        this.maxY = (double) section.getOrDefault("maxY", 0.0);
-        this.maxZ = (double) section.getOrDefault("maxZ", 0.0);
-        this.minX = (double) section.getOrDefault("minX", 0.0);
-        this.minY = (double) section.getOrDefault("minY", 0.0);
-        this.minZ = (double) section.getOrDefault("minZ", 0.0);
+        this.X = getDoubleInterval(section,"X");
+        this.Y = getDoubleInterval(section,"Y");
+        this.Z = getDoubleInterval(section,"Z");
     }
 
     @Override
@@ -60,9 +58,9 @@ public class RandomFireworkNode extends FireworkNode {
             else
                 stack = presets.get(rd.nextInt(presets.size()));
 
-            double xOff = rd.nextDouble(minX, maxX);
-            double yOff = rd.nextDouble(minY, maxY);
-            double zOff = rd.nextDouble(minZ, maxZ);
+            double xOff = rd.nextDouble(X.minimum, X.maximum);
+            double yOff = rd.nextDouble(Y.minimum, Y.maximum);
+            double zOff = rd.nextDouble(Z.minimum, Z.maximum);
             // send create and add to id list
             int[] id = new int[]{FireworkUtil.broadcastFireworkCreate(
                     config.players,
