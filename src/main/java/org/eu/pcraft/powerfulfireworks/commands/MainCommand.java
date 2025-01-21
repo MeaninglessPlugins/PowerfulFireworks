@@ -9,6 +9,7 @@ import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.permissions.PermissionAttachment;
 import org.eu.pcraft.powerfulfireworks.Permissions;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
@@ -45,6 +46,7 @@ public class MainCommand extends Command {
                 case "font" -> this.font(sender, args);
                 case "execute" -> this.execute(sender, args);
                 case "reload" -> this.reload(sender);
+                case "toggle" -> this.toggle(sender);
                 default -> this.help(sender);
             }
         }
@@ -52,6 +54,10 @@ public class MainCommand extends Command {
         return true;
     }
 
+    private void toggle(CommandSender sender){
+        PermissionAttachment permissionAttachment=new PermissionAttachment(PowerfulFireworks.getInstance(),sender);
+        permissionAttachment.setPermission(Permissions.TOGGLE, !sender.hasPermission(Permissions.TOGGLE));
+    }
     private void help(CommandSender sender) {
         MessageBuilder mb = PowerfulFireworks.getInstance().getContext().message(sender);
         mb.localize("commands.fireworks.help.header")
@@ -155,6 +161,7 @@ public class MainCommand extends Command {
         } else {
             try {
                 PowerfulFireworks.getInstance().loadConfigurations();
+                PowerfulFireworks.getInstance().applyConfigurations();
                 mb.localize("commands.fireworks.reload.complete");
             } catch (Throwable t) {
                 mb.localize("commands.fireworks.reload.failed");
@@ -167,7 +174,7 @@ public class MainCommand extends Command {
     public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
         TabBuilder builder = new TabBuilder();
         if (args.length == 1) {
-            builder.add(args[0], "help", "execute", "reload", "font");
+            builder.add(args[0], "help", "execute", "reload", "font", "toggle");
         } else if (args.length == 2) {
             String a0 = args[0].toLowerCase(Locale.ROOT);
             String a1 = args[1];

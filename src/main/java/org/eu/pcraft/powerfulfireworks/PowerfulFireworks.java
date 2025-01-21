@@ -9,6 +9,7 @@ import org.bukkit.Bukkit;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.command.CommandMap;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.eu.pcraft.powerfulfireworks.commands.MainCommand;
 import org.eu.pcraft.powerfulfireworks.commands.TestCommand;
@@ -94,21 +95,18 @@ public final class PowerfulFireworks extends JavaPlugin {
         this.mainCommand = new MainCommand();
         map.register("fireworks", this.mainCommand);
 
-        //Listener
+        // Listener
         Bukkit.getPluginManager().registerEvents(new EventListener(), instance);
-        //Timer
-        if(mainConfig.randomFirework.enabled){
-            timer=new FireworksTimer(
-                    mainConfig.randomFirework.min_delay,
-                    mainConfig.randomFirework.max_delay, instance);
-            timer.start();
-        }
+
+        // others
+        applyConfigurations();
     }
 
     @Override
     public void onDisable() {
-        timer.stop();
-        // Plugin shutdown logic
+        //stop timer
+        if(timer!=null)
+            timer.stop();
     }
 
     public void runAfter(long ticks, Runnable runnable) {
@@ -195,6 +193,25 @@ public final class PowerfulFireworks extends JavaPlugin {
         if (this.mainCommand != null) {
             this.mainCommand.setFontIdComp(this.fonts.keySet().toArray(new String[0])); // Add to font ID completions
             this.mainCommand.setFireworkComp(this.schedulers.keySet().toArray(new String[0]));  // Add to firework completions
+        }
+    }
+    public void applyConfigurations(){
+        // timer
+        if(mainConfig.randomFirework.enabled){
+            if(timer!=null){
+                timer.stop();
+            }
+            timer=new FireworksTimer(
+                    mainConfig.randomFirework.max_delay,
+                    mainConfig.randomFirework.min_delay, instance);
+            timer.start();
+        }
+        // permission
+        if(mainConfig.randomFirework.open_default){
+            Permissions.TOGGLE_RANDOMFIREWORKS.setDefault(PermissionDefault.TRUE);
+        }
+        else{
+            Permissions.TOGGLE_RANDOMFIREWORKS.setDefault(PermissionDefault.FALSE);
         }
     }
 }
