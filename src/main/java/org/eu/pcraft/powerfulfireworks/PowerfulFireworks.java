@@ -99,7 +99,7 @@ public final class PowerfulFireworks extends JavaPlugin {
 
     }
     private void showBrand(){
-        getLogger().info("\n" +
+        getLogger().info("\n\n" +
                 "  ____                                      __           _       \n" +
                 " |  _ \\    ___   __      __   ___   _ __   / _|  _   _  | |      \n" +
                 " | |_) |  / _ \\  \\ \\ /\\ / /  / _ \\ | '__| | |_  | | | | | |      \n" +
