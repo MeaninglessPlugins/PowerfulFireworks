@@ -10,7 +10,6 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
-import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
@@ -152,9 +151,8 @@ public class FireworkScheduler {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         MethodType type = MethodType.methodType(void.class);
         try {
-            registerCompiler("random", lookup.findConstructor(RandomFireworkNode.class, type));
             registerCompiler("reference", lookup.findConstructor(ReferenceFireworkNode.class, type));
-            registerCompiler("single", lookup.findConstructor(SingleFireworkNode.class, type));
+            registerCompiler("original", lookup.findConstructor(OriginalFireworkNode.class, type));
             registerCompiler("text", lookup.findConstructor(TextFireworkNode.class, type));
             registerCompiler("wait", lookup.findConstructor(WaitFireworkNode.class, type));
         } catch (Throwable e) {
