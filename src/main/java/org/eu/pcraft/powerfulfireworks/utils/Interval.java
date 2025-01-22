@@ -13,6 +13,10 @@ public class Interval<T>{
         minimum = map.get("minimum");
         maximum = map.get("maximum");
     }
+    public Interval(Interval<T> interval){
+        this.maximum=interval.maximum;
+        this.minimum=interval.minimum;
+    }
     public T minimum;
     public T maximum;
 }

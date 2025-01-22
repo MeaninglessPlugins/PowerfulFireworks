@@ -40,9 +40,9 @@ class OriginalFireworkNode extends FireworkNode {
         }
         this.full = this.presets.isEmpty();
         this.count = (int) section.getOrDefault("count", 1);
-        this.X = getDoubleInterval(section,"XOff");
-        this.Y = getDoubleInterval(section,"YOff");
-        this.Z = getDoubleInterval(section,"ZOff");
+        this.X = getDoubleInterval(section,"xOff");
+        this.Y = getDoubleInterval(section,"yOff");
+        this.Z = getDoubleInterval(section,"zOff");
     }
 
     @Override
