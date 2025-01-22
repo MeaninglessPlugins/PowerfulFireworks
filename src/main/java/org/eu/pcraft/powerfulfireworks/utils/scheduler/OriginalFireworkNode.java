@@ -5,10 +5,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 import org.eu.pcraft.powerfulfireworks.utils.Interval;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 class OriginalFireworkNode extends FireworkNode {
@@ -16,11 +13,18 @@ class OriginalFireworkNode extends FireworkNode {
     boolean full = false;
 
     int count = 1;
+    ThreadLocalRandom rd = ThreadLocalRandom.current();
     Interval<Double> X = new Interval<>(0.0,0.0);
     Interval<Double> Y = new Interval<>(0.0,0.0);
     Interval<Double> Z = new Interval<>(0.0,0.0);
     protected Interval<Double> getDoubleInterval(Map<String, Object> section, String key){
         return new Interval<>((LinkedHashMap<String, Double>) section.getOrDefault(key, new Interval<Double>(0.0, 0.0)));
+    }
+    protected Double getOffset(Interval<Double> interval){
+        if(Objects.equals(interval.maximum, interval.minimum)){
+            return interval.maximum;
+        }
+        return rd.nextDouble(interval.minimum, interval.maximum);
     }
     @Override
     protected void load(FireworkScheduler scheduler, Map<String, Object> section) {
@@ -43,7 +47,6 @@ class OriginalFireworkNode extends FireworkNode {
 
     @Override
     public void execute(FireworkStartupConfig config) {
-        ThreadLocalRandom rd = ThreadLocalRandom.current();
         for (int i = 0; i < count; i++) {
             ItemStack stack;
             if (this.full)
@@ -51,9 +54,9 @@ class OriginalFireworkNode extends FireworkNode {
             else
                 stack = presets.get(rd.nextInt(presets.size()));
 
-            double xOff = rd.nextDouble(X.minimum, X.maximum);
-            double yOff = rd.nextDouble(Y.minimum, Y.maximum);
-            double zOff = rd.nextDouble(Z.minimum, Z.maximum);
+            double xOff = getOffset(X);
+            double yOff = getOffset(Y);
+            double zOff = getOffset(Z);
             // send create and add to id list
             int[] id = new int[]{FireworkUtil.broadcastFireworkCreate(
                     config.players,
