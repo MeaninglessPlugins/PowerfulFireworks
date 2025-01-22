@@ -1,7 +1,7 @@
 package org.eu.pcraft.powerfulfireworks.config;
 
 import com.google.common.collect.Maps;
-import org.eu.pcraft.powerfulfireworks.utils.Pair;
+import org.eu.pcraft.powerfulfireworks.utils.Interval;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.meta.Comment;
 
@@ -16,10 +16,10 @@ public class PepperConfigModule {
     public static class RandomFirework{
         public boolean enabled = true;
         public boolean turnOnDefaultly = true;
-        public Pair<Integer> delay=new Pair<>(10, 20);
+        public Interval<Integer> delay=new Interval<>(10, 20);
         public boolean automaticDistance = true;
         public int distance = 20;
-        public Pair<Integer> flyTime = new Pair<>(30,70);
+        public Interval<Integer> flyTime = new Interval<>(30,70);
     }
 
     public RandomFirework randomFirework= new RandomFirework();

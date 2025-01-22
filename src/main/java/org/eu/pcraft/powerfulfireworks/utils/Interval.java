@@ -7,9 +7,9 @@ import java.util.LinkedHashMap;
 
 @ConfigSerializable
 @AllArgsConstructor
-public class Pair<T>{
-    public Pair(){}
-    public Pair(LinkedHashMap<String, T> map){
+public class Interval<T>{
+    public Interval(){}
+    public Interval(LinkedHashMap<String, T> map){
         minimum = map.get("minimum");
         maximum = map.get("maximum");
     }
