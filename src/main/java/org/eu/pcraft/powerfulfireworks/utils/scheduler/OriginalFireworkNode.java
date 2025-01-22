@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class RandomFireworkNode extends FireworkNode {
+class OriginalFireworkNode extends FireworkNode {
     final List<ItemStack> presets = new ArrayList<>();
     boolean full = false;
 
@@ -29,16 +29,16 @@ public class RandomFireworkNode extends FireworkNode {
         if (pr != null) {
             for (String s : pr) {
                 ItemStack p = scheduler.getPreset(s);
-                   if (p == null)
-                       throw new IllegalArgumentException("preset " + s);
-                   presets.add(p);
-                }
+                if (p == null)
+                    throw new IllegalArgumentException("preset " + s);
+                presets.add(p);
+            }
         }
         this.full = this.presets.isEmpty();
         this.count = (int) section.getOrDefault("count", 1);
-        this.X = getDoubleInterval(section,"X");
-        this.Y = getDoubleInterval(section,"Y");
-        this.Z = getDoubleInterval(section,"Z");
+        this.X = getDoubleInterval(section,"XOff");
+        this.Y = getDoubleInterval(section,"YOff");
+        this.Z = getDoubleInterval(section,"ZOff");
     }
 
     @Override

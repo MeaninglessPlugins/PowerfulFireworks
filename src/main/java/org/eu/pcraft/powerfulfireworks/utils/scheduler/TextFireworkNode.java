@@ -14,7 +14,7 @@ import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 
 import java.util.*;
 
-class TextFireworkNode extends SingleFireworkNode {
+class TextFireworkNode extends OriginalFireworkNode {
     protected boolean rotate = false;
     protected String[] lines = new String[0];
     protected double size = 1;
