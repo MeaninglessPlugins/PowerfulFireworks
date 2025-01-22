@@ -3,7 +3,7 @@ package org.eu.pcraft.powerfulfireworks.utils.scheduler;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
-import org.eu.pcraft.powerfulfireworks.utils.Pair;
+import org.eu.pcraft.powerfulfireworks.utils.Interval;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -13,15 +13,14 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class RandomFireworkNode extends FireworkNode {
     final List<ItemStack> presets = new ArrayList<>();
-    boolean single = false;
     boolean full = false;
 
     int count = 1;
-    Pair<Double> X = new Pair<>(0.0,0.0);
-    Pair<Double> Y = new Pair<>(0.0,0.0);
-    Pair<Double> Z = new Pair<>(0.0,0.0);
-    protected Pair<Double> getDoubleInterval(Map<String, Object> section, String key){
-        return new Pair<>((LinkedHashMap<String, Double>) section.getOrDefault(key, new Pair<Double>(0.0, 0.0)));
+    Interval<Double> X = new Interval<>(0.0,0.0);
+    Interval<Double> Y = new Interval<>(0.0,0.0);
+    Interval<Double> Z = new Interval<>(0.0,0.0);
+    protected Interval<Double> getDoubleInterval(Map<String, Object> section, String key){
+        return new Interval<>((LinkedHashMap<String, Double>) section.getOrDefault(key, new Interval<Double>(0.0, 0.0)));
     }
     @Override
     protected void load(FireworkScheduler scheduler, Map<String, Object> section) {
@@ -35,7 +34,6 @@ public class RandomFireworkNode extends FireworkNode {
                    presets.add(p);
                 }
         }
-        single = this.presets.size() == 1;
         this.full = this.presets.isEmpty();
         this.count = (int) section.getOrDefault("count", 1);
         this.X = getDoubleInterval(section,"X");
@@ -48,9 +46,7 @@ public class RandomFireworkNode extends FireworkNode {
         ThreadLocalRandom rd = ThreadLocalRandom.current();
         for (int i = 0; i < count; i++) {
             ItemStack stack;
-            if (this.single)
-                stack = this.presets.get(0);
-            else if (this.full)
+            if (this.full)
                 stack = FireworkUtil.getRandomFireworkItem();
             else
                 stack = presets.get(rd.nextInt(presets.size()));
