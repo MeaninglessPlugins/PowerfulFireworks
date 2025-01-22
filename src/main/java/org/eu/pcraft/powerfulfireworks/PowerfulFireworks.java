@@ -31,6 +31,20 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/***
+ *   ____                                      __           _
+ *  |  _ \    ___   __      __   ___   _ __   / _|  _   _  | |
+ *  | |_) |  / _ \  \ \ /\ / /  / _ \ | '__| | |_  | | | | | |
+ *  |  __/  | (_) |  \ V  V /  |  __/ | |    |  _| | |_| | | |
+ *  |_|      \___/    \_/\_/    \___| |_|    |_|    \__,_| |_|
+ *   _____   _                                           _
+ *  |  ___| (_)  _ __    ___  __      __   ___    _ __  | | __  ___
+ *  | |_    | | | '__|  / _ \ \ \ /\ / /  / _ \  | '__| | |/ / / __|
+ *  |  _|   | | | |    |  __/  \ V  V /  | (_) | | |    |   <  \__ \
+ *  |_|     |_| |_|     \___|   \_/\_/    \___/  |_|    |_|\_\ |___/
+ *
+ */
+
 public final class PowerfulFireworks extends JavaPlugin {
     @Getter
     private static PowerfulFireworks instance;
@@ -60,6 +74,9 @@ public final class PowerfulFireworks extends JavaPlugin {
 
     @Override
     public void onLoad() {
+        //brand
+        showBrand();
+
         //instance
         PowerfulFireworks.instance = this;
         this.context = new BukkitPluginContext(this);
@@ -81,7 +98,22 @@ public final class PowerfulFireworks extends JavaPlugin {
         }
 
     }
-
+    private void showBrand(){
+        getLogger().info("\n" +
+                "  ____                                      __           _       \n" +
+                " |  _ \\    ___   __      __   ___   _ __   / _|  _   _  | |      \n" +
+                " | |_) |  / _ \\  \\ \\ /\\ / /  / _ \\ | '__| | |_  | | | | | |      \n" +
+                " |  __/  | (_) |  \\ V  V /  |  __/ | |    |  _| | |_| | | |      \n" +
+                " |_|      \\___/    \\_/\\_/    \\___| |_|    |_|    \\__,_| |_|      \n" +
+                "  _____   _                                           _          \n" +
+                " |  ___| (_)  _ __    ___  __      __   ___    _ __  | | __  ___ \n" +
+                " | |_    | | | '__|  / _ \\ \\ \\ /\\ / /  / _ \\  | '__| | |/ / / __|\n" +
+                " |  _|   | | | |    |  __/  \\ V  V /  | (_) | | |    |   <  \\__ \\\n" +
+                " |_|     |_| |_|     \\___|   \\_/\\_/    \\___/  |_|    |_|\\_\\ |___/\n" +
+                "                                                                 \n"+
+                "Thanks for using PowerfulFireworks!\n"+
+                "Written by H3xadecimal & jlxnb\n");
+    }
     @Override
     public void onEnable() {
         if (this.nms == null)
