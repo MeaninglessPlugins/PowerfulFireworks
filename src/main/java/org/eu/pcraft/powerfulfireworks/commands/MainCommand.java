@@ -117,7 +117,7 @@ public class MainCommand extends Command {
                 mb.localize("commands.no-permission");
             }
         } else {
-            mb.localize("commands.fireworks.invalid-args", "fireworks font (font-id) (character)");
+            mb.localize("commands.invalid-args", "fireworks font (font-id) (character)");
         }
         mb.send();
     }
