@@ -25,6 +25,9 @@ public class FireworksTimer extends PepperRollTimer {
         for(Player player:plugin.getServer().getOnlinePlayers()){
             if(!player.hasPermission(Permissions.SWITCHES_RANDOMFIREWORKS))
                 continue;
+            if(plugin.getMainConfig().randomFirework.blacklistWorlds.contains(player.getWorld().getName())){
+                continue;
+            }
             PowerfulFireworks.getInstance().nextTick(() -> {
                 UUID uuid = UUID.randomUUID();
                 provider.sendAddEntity(player, provider.createAddFireworkEntityPacket(entityId, uuid, FireworkUtil.getRandomLocation(player.getLocation(), FireworkUtil.getMaxDistance())), fakeFirework);
