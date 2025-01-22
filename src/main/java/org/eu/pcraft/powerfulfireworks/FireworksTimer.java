@@ -4,19 +4,19 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.eu.pcraft.powerfulfireworks.nms.common.*;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
+import org.eu.pcraft.powerfulfireworks.utils.Interval;
 
 import java.util.Random;
 import java.util.UUID;
 
 public class FireworksTimer extends PepperRollTimer {
-    public FireworksTimer(int mindelay, int maxdelay, PowerfulFireworks javaPlugin) {
-        super(mindelay, maxdelay, javaPlugin);
+    public FireworksTimer(Interval<Integer> delay) {
+        super(delay);
     }
 
     @Override
     protected void run() {
-        final PowerfulFireworks pl = PowerfulFireworks.getInstance();
-        final NMSProvider provider = pl.getNms();
+        final NMSProvider provider = plugin.getNms();
         int entityId = provider.allocateEntityId();
         NMSEntityDataPacket fakeFirework = provider.createFireworkEntityDataPacket(entityId, FireworkUtil.getRandomFireworkItem());
         NMSEntityEventPacket eventPacket = provider.createEntityEvent(entityId, (byte) 17);
@@ -28,10 +28,10 @@ public class FireworksTimer extends PepperRollTimer {
             PowerfulFireworks.getInstance().nextTick(() -> {
                 UUID uuid = UUID.randomUUID();
                 provider.sendAddEntity(player, provider.createAddFireworkEntityPacket(entityId, uuid, FireworkUtil.getRandomLocation(player.getLocation(), FireworkUtil.getMaxDistance())), fakeFirework);
-                Bukkit.getScheduler().runTaskLater(pl, () -> {
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     provider.sendEntityEvent(player, eventPacket);
                     provider.sendRemoveEntity(player, removePacket);
-                }, rd.nextInt(pl.getMainConfig().randomFirework.flyTime.minimum, pl.getMainConfig().randomFirework.flyTime.maximum));
+                }, rd.nextInt(plugin.getMainConfig().randomFirework.flyTime.minimum, plugin.getMainConfig().randomFirework.flyTime.maximum));
             });
         }
         start();

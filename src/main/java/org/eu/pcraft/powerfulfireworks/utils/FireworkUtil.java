@@ -28,6 +28,11 @@ public final class FireworkUtil {
         return location;
     }
 
+    /**
+     * Generate a random-firework
+     * Modify from plugin: Festival Fireworks
+     * @return Firework item stack
+     */
     public static ItemStack getRandomFireworkItem() {
         final ThreadLocalRandom r = ThreadLocalRandom.current();
         FireworkEffect.Builder fireworkBuilder = FireworkEffect.builder();
