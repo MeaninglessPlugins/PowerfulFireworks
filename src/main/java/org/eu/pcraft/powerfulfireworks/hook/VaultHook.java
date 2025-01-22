@@ -5,8 +5,8 @@ import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
+@Getter
 public class VaultHook {
-    @Getter
     private Permission perms = null;
 
     public boolean setup(){

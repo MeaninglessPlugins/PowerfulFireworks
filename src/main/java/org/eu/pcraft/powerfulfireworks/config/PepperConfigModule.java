@@ -5,6 +5,8 @@ import org.eu.pcraft.powerfulfireworks.utils.Interval;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.meta.Comment;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @ConfigSerializable
@@ -20,6 +22,7 @@ public class PepperConfigModule {
         public boolean automaticDistance = true;
         public int distance = 20;
         public Interval<Integer> flyTime = new Interval<>(30,70);
+        public List<String> blacklistWorlds = List.of("world_nether");
     }
 
     public RandomFirework randomFirework= new RandomFirework();
