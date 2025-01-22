@@ -18,7 +18,9 @@ class OriginalFireworkNode extends FireworkNode {
     Interval<Double> Y = new Interval<>(0.0,0.0);
     Interval<Double> Z = new Interval<>(0.0,0.0);
     protected Interval<Double> getDoubleInterval(Map<String, Object> section, String key){
-        return new Interval<>((LinkedHashMap<String, Double>) section.getOrDefault(key, new Interval<Double>(0.0, 0.0)));
+        LinkedHashMap<String, Double> map = (LinkedHashMap<String, Double>)section.get(key);
+        if(map == null)return new Interval<>(0.0, 0.0);
+        return new Interval<>(map);
     }
     protected Double getOffset(Interval<Double> interval){
         if(Objects.equals(interval.maximum, interval.minimum)){
@@ -40,9 +42,9 @@ class OriginalFireworkNode extends FireworkNode {
         }
         this.full = this.presets.isEmpty();
         this.count = (int) section.getOrDefault("count", 1);
-        this.X = getDoubleInterval(section,"XOff");
-        this.Y = getDoubleInterval(section,"YOff");
-        this.Z = getDoubleInterval(section,"ZOff");
+        this.X = getDoubleInterval(section,"xOff");
+        this.Y = getDoubleInterval(section,"yOff");
+        this.Z = getDoubleInterval(section,"zOff");
     }
 
     @Override
