@@ -1,6 +1,7 @@
 package org.eu.pcraft.powerfulfireworks.utils.scheduler;
 
 import com.google.common.base.Verify;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
@@ -13,6 +14,8 @@ import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 
 import java.util.*;
+
+import static org.eu.pcraft.powerfulfireworks.utils.FireworkUtil.get2dSqrDistance;
 
 class TextFireworkNode extends OriginalFireworkNode {
     protected boolean rotate = false;
@@ -85,6 +88,7 @@ class TextFireworkNode extends OriginalFireworkNode {
             double tz = tan.getZ();
 
             Location loc = p.getLocation();
+
             double cx = loc.getX();
             double cz = loc.getZ();
             double nt = FireworkUtil.normT(cx, cz, tx, tz);
@@ -132,6 +136,7 @@ class TextFireworkNode extends OriginalFireworkNode {
         double nz = sz;
 
         int totalEnt = 0;
+
         for (String line : this.lines) {
             for (char aChar : line.toCharArray()) {
                 // x and z offset
@@ -149,7 +154,6 @@ class TextFireworkNode extends OriginalFireworkNode {
                 for (Player player : config.players) {
                     nms.sendAddEntity(player, add, data);
                 }
-
                 totalEnt++;
             }
 

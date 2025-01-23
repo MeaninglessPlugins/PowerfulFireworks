@@ -44,6 +44,7 @@ public class FireworkScheduler {
     private void execute0(FireworkStartupConfig config, AtomicInteger state) {
         final PowerfulFireworks plugin = config.plugin;
         final Logger logger = config.plugin.getSLF4JLogger();
+        config.updatePlayers();
         plugin.nextTick(() -> {
             int current = state.getAndIncrement();
 

@@ -19,15 +19,30 @@ public final class FireworkUtil {
         return pl.getMainConfig().randomFirework.distance;
     }
 
-    public static Location getRandomLocation(Location location,int maxDistance) {
-        final ThreadLocalRandom r = ThreadLocalRandom.current();
-        location.setX(location.getX() + (r.nextDouble() * 2 - 1) * maxDistance);
-        location.setZ(location.getZ() + (r.nextDouble() * 2 - 1) * maxDistance);
-        int minY=location.getWorld().getHighestBlockYAt(location);
-        location.setY(minY+1);
+    public static Location getRandomLocation(Location location, int maxDistance) {
+        final ThreadLocalRandom random = ThreadLocalRandom.current();
+        double u = random.nextDouble();
+        double theta = 2 * Math.PI * random.nextDouble();
+        double radius = maxDistance * Math.sqrt(u);
+
+        // 将极坐标转换为笛卡尔坐标
+        location.setX(location.x() + radius * Math.cos(theta));
+        location.setZ(location.z() + radius * Math.sin(theta));
+        location.setY(location.getWorld().getHighestBlockYAt(location) + 1);
         return location;
     }
 
+    /**
+    * Get sqrDistance between the two location
+    * @param from the first location
+    * @param to the second location
+    * @return distance
+    */
+    public static long get2dSqrDistance(Location from, Location to){
+        long gapX = (long)(to.getX()-from.getX())<<1;
+        long gapZ = (long)(to.getZ()-from.getZ())<<1;
+        return gapX + gapZ;
+    }
     /**
      * Generate a random-firework
      * Modify from plugin: Festival Fireworks
