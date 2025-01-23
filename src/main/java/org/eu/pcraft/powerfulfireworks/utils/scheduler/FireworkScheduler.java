@@ -29,7 +29,7 @@ public class FireworkScheduler {
     private final String id;
 
     private final Map<String, ItemStack> presets = new HashMap<>();
-    private final List<FireworkNode> nodes = new ArrayList<>();
+    private final List<CommonNode> nodes = new ArrayList<>();
 
     public ItemStack getPreset(String id) {
         return this.presets.get(id);
@@ -49,7 +49,7 @@ public class FireworkScheduler {
             int current = state.getAndIncrement();
 
             if (current < this.nodes.size()) {
-                FireworkNode node = this.nodes.get(current);
+                CommonNode node = this.nodes.get(current);
 
                 if (plugin.mainConfig.debug)
                     logger.info("({}) executing node {}", this.id, node);
@@ -98,7 +98,7 @@ public class FireworkScheduler {
             String typeId = (String) Verify.verifyNotNull(node.get("type"), "type in scheduler %s index %s", scheduler.id, i);
             if (nodeCompilers.containsKey(typeId)) {    // compile
                 try {
-                    FireworkNode inst = (FireworkNode) nodeCompilers.get(typeId).invoke();
+                    CommonNode inst = (CommonNode) nodeCompilers.get(typeId).invoke();
                     inst.load(scheduler, node);
                     scheduler.nodes.add(inst);
                 } catch (Throwable e) {

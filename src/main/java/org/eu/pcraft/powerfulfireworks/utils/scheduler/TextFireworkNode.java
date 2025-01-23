@@ -1,7 +1,6 @@
 package org.eu.pcraft.powerfulfireworks.utils.scheduler;
 
 import com.google.common.base.Verify;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
@@ -15,9 +14,7 @@ import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 
 import java.util.*;
 
-import static org.eu.pcraft.powerfulfireworks.utils.FireworkUtil.get2dSqrDistance;
-
-class TextFireworkNode extends OriginalFireworkNode {
+class TextFireworkNode extends FireworkNode {
     protected boolean rotate = false;
     protected String[] lines = new String[0];
     protected double size = 1;
@@ -110,7 +107,7 @@ class TextFireworkNode extends OriginalFireworkNode {
 
                     // send
                     NMSAddEntityPacket add = nms.createAddFireworkEntityPacket(id[totalEnt], uuid[totalEnt], fwl);
-                    NMSEntityDataPacket data = nms.createFireworkEntityDataPacket(id[totalEnt], this.preset);
+                    NMSEntityDataPacket data = nms.createFireworkEntityDataPacket(id[totalEnt], getRandomPreset());
                     nms.sendAddEntity(p,
                             add,
                             data);
@@ -150,7 +147,7 @@ class TextFireworkNode extends OriginalFireworkNode {
                 Location nLocation = new Location(loc.getWorld(), nx, sy, nz);
                 // send
                 NMSAddEntityPacket add = nms.createAddFireworkEntityPacket(id[totalEnt], uuid[totalEnt], nLocation);
-                NMSEntityDataPacket data = nms.createFireworkEntityDataPacket(id[totalEnt], this.preset);
+                NMSEntityDataPacket data = nms.createFireworkEntityDataPacket(id[totalEnt], getRandomPreset());
                 for (Player player : config.players) {
                     nms.sendAddEntity(player, add, data);
                 }

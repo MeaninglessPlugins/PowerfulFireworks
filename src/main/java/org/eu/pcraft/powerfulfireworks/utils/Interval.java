@@ -5,7 +5,6 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
 import java.util.LinkedHashMap;
 
-@ConfigSerializable
 @AllArgsConstructor
 public class Interval<T>{
     public Interval(){}
