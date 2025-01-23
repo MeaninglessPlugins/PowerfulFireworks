@@ -5,7 +5,6 @@ import org.eu.pcraft.powerfulfireworks.utils.Interval;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.meta.Comment;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +16,7 @@ public class PepperConfigModule {
     @ConfigSerializable
     public static class RandomFirework{
         public boolean enabled = true;
-        public boolean turnOnDefaultly = true;
+        public boolean turnOnByDefault = true;
         public Interval<Integer> delay=new Interval<>(10, 20);
         public boolean automaticDistance = true;
         public int distance = 20;
