@@ -15,9 +15,9 @@ class OriginalFireworkNode extends FireworkNode {
     Interval<Double> Y = new Interval<>(0.0,0.0);
     Interval<Double> Z = new Interval<>(0.0,0.0);
     protected Interval<Double> getDoubleInterval(Map<String, Object> section, String key){
-        LinkedHashMap<String, Double> map = (LinkedHashMap<String, Double>)section.get(key);
-        if(map == null)return new Interval<>(0.0, 0.0);
-        return new Interval<>(map);
+        Object obj = section.get(key);
+        if(obj == null)return new Interval<>(0.0, 0.0);
+        return new Interval<>(obj);
     }
     protected Double getOffset(Interval<Double> interval){
         if(Objects.equals(interval.maximum, interval.minimum)){
