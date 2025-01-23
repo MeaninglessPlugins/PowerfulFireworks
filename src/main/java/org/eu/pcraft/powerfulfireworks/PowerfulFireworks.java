@@ -252,7 +252,7 @@ public final class PowerfulFireworks extends JavaPlugin {
             timer.start();
         }
         // permission
-        if(mainConfig.randomFirework.turnOnDefaultly){
+        if(mainConfig.randomFirework.turnOnByDefault){
             Permissions.SWITCHES_RANDOMFIREWORKS.setDefault(PermissionDefault.TRUE);
         }
         else{
