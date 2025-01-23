@@ -4,12 +4,12 @@ import com.google.common.base.Verify;
 
 import java.util.Map;
 
-public class ReferenceFireworkNode extends FireworkNode{
+public class ReferenceFireworkNode extends CommonNode {
     private String target;
 
     @Override
     protected void load(FireworkScheduler scheduler, Map<String, Object> section) {
-        super.load(scheduler, section);
+//        super.load(scheduler, section);
         this.target = (String) Verify.verifyNotNull(section.get("target"));
         if (this.target.equals(scheduler.getId()))
             throw new IllegalArgumentException("Circular scheduler reference: " + this.target);

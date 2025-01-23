@@ -2,7 +2,7 @@ package org.eu.pcraft.powerfulfireworks.utils.scheduler;
 
 import java.util.Map;
 
-class WaitFireworkNode extends FireworkNode {
+class WaitFireworkNode extends CommonNode {
     long ticks = 0;
 
     @Override
