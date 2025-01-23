@@ -1,6 +1,5 @@
 package org.eu.pcraft.powerfulfireworks.utils.scheduler;
 
-import com.google.common.base.Verify;
 import org.bukkit.inventory.ItemStack;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 
@@ -36,10 +35,5 @@ public abstract class FireworkNode extends CommonNode{
         else
             stack = presets.get(rd.nextInt(presets.size()));
         return stack;
-    }
-
-    @Override
-    public void execute(FireworkStartupConfig config) {
-        ;
     }
 }

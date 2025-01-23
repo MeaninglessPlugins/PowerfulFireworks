@@ -9,7 +9,6 @@ public class ReferenceFireworkNode extends CommonNode {
 
     @Override
     protected void load(FireworkScheduler scheduler, Map<String, Object> section) {
-//        super.load(scheduler, section);
         this.target = (String) Verify.verifyNotNull(section.get("target"));
         if (this.target.equals(scheduler.getId()))
             throw new IllegalArgumentException("Circular scheduler reference: " + this.target);
