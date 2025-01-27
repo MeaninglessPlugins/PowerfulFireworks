@@ -11,13 +11,11 @@ import org.eu.pcraft.powerfulfireworks.nms.common.NMSAddEntityPacket;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSEntityDataPacket;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
-import org.eu.pcraft.powerfulfireworks.utils.LocationUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.eu.pcraft.powerfulfireworks.utils.FireworkUtil.getRandomFireworkItem;
 import static org.eu.pcraft.powerfulfireworks.utils.LocationUtil.*;
 
 @Getter

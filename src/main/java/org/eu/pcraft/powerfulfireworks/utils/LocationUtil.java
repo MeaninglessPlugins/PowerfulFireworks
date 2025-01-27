@@ -2,6 +2,7 @@ package org.eu.pcraft.powerfulfireworks.utils;
 
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,7 @@ public final class LocationUtil {
         location.setY(location.getWorld().getHighestBlockYAt(location) + 1);
         return location;
     }
+
     public static double normT(double centerX, double centerZ, double tangentX, double tangentZ) {
         double tx = centerZ - tangentZ;
         double tz = (tangentX - centerX);
@@ -71,5 +73,25 @@ public final class LocationUtil {
 
         // Return the calculated Location List
         return ret;
+    }
+
+    public static int getMaxDistance() {
+        PowerfulFireworks pl = PowerfulFireworks.getInstance();
+        if (pl.getMainConfig().randomFirework.automaticDistance) {
+            return pl.getServer().getViewDistance()*16;
+        }
+        return pl.getMainConfig().randomFirework.distance;
+    }
+
+    /**
+    * Get sqrDistance between the two location
+    * @param from the first location
+    * @param to the second location
+    * @return distance
+    */
+    public static long get2dSqrDistance(Location from, Location to){
+        long gapX = (long)(to.getX()-from.getX())<<1;
+        long gapZ = (long)(to.getZ()-from.getZ())<<1;
+        return gapX + gapZ;
     }
 }

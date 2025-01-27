@@ -1,7 +1,6 @@
 package org.eu.pcraft.powerfulfireworks.utils.scheduler;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -11,7 +10,7 @@ import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.eu.pcraft.powerfulfireworks.utils.FireworkUtil.get2dSqrDistance;
+import static org.eu.pcraft.powerfulfireworks.utils.LocationUtil.get2dSqrDistance;
 
 @Getter
 @Setter

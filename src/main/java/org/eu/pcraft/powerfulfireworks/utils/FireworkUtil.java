@@ -1,75 +1,18 @@
 package org.eu.pcraft.powerfulfireworks.utils;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.Color;
-import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.eu.pcraft.powerfulfireworks.nms.common.*;
 
-import java.awt.*;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class FireworkUtil {
-    public static int getMaxDistance() {
-        PowerfulFireworks pl = PowerfulFireworks.getInstance();
-        if (pl.getMainConfig().randomFirework.automaticDistance) {
-            return pl.getServer().getViewDistance()*16;
-        }
-        return pl.getMainConfig().randomFirework.distance;
-    }
-
-    /**
-    * Get sqrDistance between the two location
-    * @param from the first location
-    * @param to the second location
-    * @return distance
-    */
-    public static long get2dSqrDistance(Location from, Location to){
-        long gapX = (long)(to.getX()-from.getX())<<1;
-        long gapZ = (long)(to.getZ()-from.getZ())<<1;
-        return gapX + gapZ;
-    }
-    /**
-    *
-    */
-    public static void sendRotateTextFireworks(NMSProvider nms, Player p, Location tan, double size, String[] lines, int[] id, UUID[] uuid){
-            double tx = tan.getX();
-            double ty = tan.getY();
-            double tz = tan.getZ();
-
-            Location loc = p.getLocation();
-
-            double cx = loc.getX();
-            double cz = loc.getZ();
-
-            int totalEnt = 0;
-            int charLength = lines[0].length();
-            List<Location> locationList = LocationUtil.calculatePoint(loc.getWorld(),
-                    cx, cz,
-                    tx, ty, tz,
-                    charLength * size, charLength);
-            for (String line : lines) {
-                for (int i = 0; i < charLength; i++) {
-                    if (line.charAt(i) == '0') {  // skip empty chars
-                        continue;
-                    }
-                    // send
-                    NMSAddEntityPacket add = nms.createAddFireworkEntityPacket(id[totalEnt], uuid[totalEnt], locationList.get(i).add(0, -i * size, 0));
-                    NMSEntityDataPacket data = nms.createFireworkEntityDataPacket(id[totalEnt], getRandomFireworkItem(false));
-                    nms.sendAddEntity(p,
-                            add,
-                            data);
-                    totalEnt ++;
-                }
-            }
-    }
 
     /**
      * Generate a random-firework

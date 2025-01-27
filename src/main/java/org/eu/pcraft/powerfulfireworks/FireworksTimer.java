@@ -36,12 +36,12 @@ public class FireworksTimer extends PepperRollTimer {
             if(plugin.getMainConfig().randomFirework.text.enabled && rd.nextDouble() <= plugin.getMainConfig().randomFirework.text.chance){
                 BitmapFont font = plugin.getFonts().get(plugin.getMainConfig().randomFirework.text.font);
                 TextFirework firework = new TextFirework(font, plugin.getMainConfig().randomFirework.text.texts.get(rd.nextInt(plugin.getMainConfig().randomFirework.text.texts.size())), plugin.getMainConfig().randomFirework.text.gap, plugin.getMainConfig().randomFirework.text.size);
-                firework.execute(rdFlyTime, FireworkUtil.getRandomFireworkItem(true),  LocationUtil.getRandomLocation(player.getLocation(), FireworkUtil.getMaxDistance()), List.of(player));
+                firework.execute(rdFlyTime, FireworkUtil.getRandomFireworkItem(true),  LocationUtil.getRandomLocation(player.getLocation(), LocationUtil.getMaxDistance()), List.of(player));
                 continue;
             }
             PowerfulFireworks.getInstance().nextTick(() -> {
                 UUID uuid = UUID.randomUUID();
-                provider.sendAddEntity(player, provider.createAddFireworkEntityPacket(entityId, uuid, LocationUtil.getRandomLocation(player.getLocation(), FireworkUtil.getMaxDistance())), fakeFirework);
+                provider.sendAddEntity(player, provider.createAddFireworkEntityPacket(entityId, uuid, LocationUtil.getRandomLocation(player.getLocation(), LocationUtil.getMaxDistance())), fakeFirework);
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     provider.sendEntityEvent(player, eventPacket);
                     provider.sendRemoveEntity(player, removePacket);
