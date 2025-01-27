@@ -31,20 +31,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/***
- *   ____                                      __           _
- *  |  _ \    ___   __      __   ___   _ __   / _|  _   _  | |
- *  | |_) |  / _ \  \ \ /\ / /  / _ \ | '__| | |_  | | | | | |
- *  |  __/  | (_) |  \ V  V /  |  __/ | |    |  _| | |_| | | |
- *  |_|      \___/    \_/\_/    \___| |_|    |_|    \__,_| |_|
- *   _____   _                                           _
- *  |  ___| (_)  _ __    ___  __      __   ___    _ __  | | __  ___
- *  | |_    | | | '__|  / _ \ \ \ /\ / /  / _ \  | '__| | |/ / / __|
- *  |  _|   | | | |    |  __/  \ V  V /  | (_) | | |    |   <  \__ \
- *  |_|     |_| |_|     \___|   \_/\_/    \___/  |_|    |_|\_\ |___/
- *
- */
-
 public final class PowerfulFireworks extends JavaPlugin {
     @Getter
     private static PowerfulFireworks instance;

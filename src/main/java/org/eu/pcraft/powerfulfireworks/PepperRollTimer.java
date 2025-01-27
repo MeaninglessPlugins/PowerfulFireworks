@@ -16,6 +16,7 @@ public class PepperRollTimer {
         plugin = PowerfulFireworks.getInstance();
     }
     public void start(){
+        System.out.println(4);
         task= Bukkit.getScheduler()
                 .runTaskLaterAsynchronously(plugin,
                         this::run,
