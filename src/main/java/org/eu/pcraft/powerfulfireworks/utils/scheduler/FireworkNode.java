@@ -31,7 +31,15 @@ public abstract class FireworkNode extends CommonNode{
     ItemStack getRandomPreset() {
         ItemStack stack;
         if (presets.isEmpty())
-            stack = FireworkUtil.getRandomFireworkItem();
+            stack = FireworkUtil.getRandomFireworkItem(false);
+        else
+            stack = presets.get(rd.nextInt(presets.size()));
+        return stack;
+    }
+    ItemStack getRandomPreset(boolean b) {
+        ItemStack stack;
+        if (presets.isEmpty())
+            stack = FireworkUtil.getRandomFireworkItem(b);
         else
             stack = presets.get(rd.nextInt(presets.size()));
         return stack;

@@ -43,19 +43,26 @@ class OriginalFireworkNode extends FireworkNode {
             double yOff = getOffset(Y);
             double zOff = getOffset(Z);
             // send create and add to id list
-            int[] id = new int[]{FireworkUtil.broadcastFireworkCreate(
-                    config.players,
-                    stack,
-                    config.startupLocation.clone().add(xOff, yOff, zOff))};
-
-            // make an explosion task
-            BukkitRunnable fireworkExplosionTask = new BukkitRunnable() {
-                @Override
-                public void run() {
-                    FireworkUtil.broadcastFireworkExplosion(config.players, id);
+            try{
+                int[] id = new int[]{FireworkUtil.broadcastFireworkCreate(
+                        config.players,
+                        stack,
+                        config.startupLocation.clone().add(xOff, yOff, zOff))};
+                // make an explosion task
+                BukkitRunnable fireworkExplosionTask = new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        FireworkUtil.broadcastFireworkExplosion(config.players, id);
+                    }
+                };
+                fireworkExplosionTask.runTaskLater(config.plugin, flyTime);
+            }catch(IllegalArgumentException e){
+                if(Objects.equals(e.getMessage(), "No target specified")){
+                    config.plugin.getLogger().info("No target specified");
+                }else{
+                    throw e;
                 }
-            };
-            fireworkExplosionTask.runTaskLater(config.plugin, flyTime);
+            }
         }
     }
 }
