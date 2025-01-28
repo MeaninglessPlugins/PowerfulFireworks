@@ -15,7 +15,6 @@ public final class IntervalSerializer<T> implements TypeSerializer<Interval> {
     public Interval<T> deserialize(Type type, ConfigurationNode node) throws SerializationException {
         Interval<T> interval = new Interval<>();
         @Nullable Object value = node.raw();
-        System.out.println(value);
         if(value instanceof List){
             List<T> list = (List<T>) value;
             if (list.size() >= 2) {
@@ -38,6 +37,7 @@ public final class IntervalSerializer<T> implements TypeSerializer<Interval> {
 
     @Override
     public void serialize(Type type, @Nullable Interval obj, ConfigurationNode node) throws SerializationException {
-
+        Map<String, T> map = (Map<String, T>) Map.of("minimum", obj.minimum, "maximum", obj.maximum);
+        node.set(map);
     }
 }
