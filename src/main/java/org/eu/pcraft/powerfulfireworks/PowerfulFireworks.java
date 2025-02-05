@@ -108,8 +108,6 @@ public final class PowerfulFireworks extends JavaPlugin {
         //bStats
         int pluginId = 24294;
         Metrics metrics = new Metrics(this, pluginId);
-        //Permissions
-        Permissions.register();
 
         // commands
         CommandMap map = Bukkit.getCommandMap();
@@ -133,6 +131,8 @@ public final class PowerfulFireworks extends JavaPlugin {
         // others
         applyConfigurations();
 
+        //Permissions
+        Permissions.register();
     }
 
     @Override
