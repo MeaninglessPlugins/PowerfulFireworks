@@ -26,7 +26,8 @@ public class PepperConfigModule {
     public static class RandomFirework{
         public boolean enabled = true;
         public boolean turnOnByDefault = true;
-        public Interval<Integer> delay=new Interval<>(10, 20);
+        public Interval<Integer> delay = new Interval<>(10, 20);
+        public Interval<Integer> number = new Interval<>(2,5);
         public boolean automaticDistance = true;
         public int distance = 20;
         public Interval<Integer> flyTime = new Interval<>(30,70);
