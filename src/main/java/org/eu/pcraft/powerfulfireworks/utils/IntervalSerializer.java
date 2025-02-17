@@ -37,6 +37,9 @@ public final class IntervalSerializer<T> implements TypeSerializer<Interval> {
 
     @Override
     public void serialize(Type type, @Nullable Interval obj, ConfigurationNode node) throws SerializationException {
+        if (obj.minimum == obj.maximum){
+            node.set((Integer) obj.maximum);
+        }
         Map<String, T> map = (Map<String, T>) Map.of("minimum", obj.minimum, "maximum", obj.maximum);
         node.set(map);
     }
