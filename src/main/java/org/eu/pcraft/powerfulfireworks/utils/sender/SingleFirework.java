@@ -12,12 +12,6 @@ import java.util.List;
 
 @Getter
     public class SingleFirework implements FireworkSender{
-        ItemStack stack;
-        List<Player> playerList;
-
-        public SingleFirework(ItemStack stack) {
-            this.stack = stack;
-        }
 
         @Override
         public void execute(int flyTime, ItemStack stack, Location fwLoc, List<Player> playerList) {
