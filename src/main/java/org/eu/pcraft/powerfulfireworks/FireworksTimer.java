@@ -8,6 +8,8 @@ import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 import org.eu.pcraft.powerfulfireworks.utils.Interval;
 import org.eu.pcraft.powerfulfireworks.utils.LocationUtil;
 import org.eu.pcraft.powerfulfireworks.utils.sender.TextFirework;
+import org.eu.pcraft.powerfulfireworks.utils.sender.FireworkSender;
+import org.eu.pcraft.powerfulfireworks.utils.sender.SingleFirework;
 
 import java.util.List;
 import java.util.Random;
@@ -22,10 +24,8 @@ public class FireworksTimer extends PepperRollTimer {
     protected void run() {
         final NMSProvider provider = plugin.getNms();
         int entityId = provider.allocateEntityId();
-        NMSEntityDataPacket fakeFirework = provider.createFireworkEntityDataPacket(entityId, FireworkUtil.getRandomFireworkItem(false));
-        NMSEntityEventPacket eventPacket = provider.createEntityEvent(entityId, (byte) 17);
-        NMSRemoveEntityPacket removePacket = provider.createRemoveEntityPacket(entityId);
         final Random rd = new Random();
+        FireworkSender sender;
         for(Player player:plugin.getServer().getOnlinePlayers()){
             int rdFlyTime = rd.nextInt(plugin.getMainConfig().randomFirework.flyTime.minimum, plugin.getMainConfig().randomFirework.flyTime.maximum);
             if(!player.hasPermission(Permissions.SWITCHES_RANDOMFIREWORKS))
@@ -35,18 +35,11 @@ public class FireworksTimer extends PepperRollTimer {
             }
             if(plugin.getMainConfig().randomFirework.text.enabled && rd.nextDouble() <= plugin.getMainConfig().randomFirework.text.chance){
                 BitmapFont font = plugin.getFonts().get(plugin.getMainConfig().randomFirework.text.font);
-                TextFirework firework = new TextFirework(font, plugin.getMainConfig().randomFirework.text.texts.get(rd.nextInt(plugin.getMainConfig().randomFirework.text.texts.size())), plugin.getMainConfig().randomFirework.text.gap, plugin.getMainConfig().randomFirework.text.size);
-                firework.execute(rdFlyTime, FireworkUtil.getRandomFireworkItem(true),  LocationUtil.getRandomLocation(player.getLocation(), LocationUtil.getMaxDistance()), List.of(player));
-                continue;
+                sender = new TextFirework(font, plugin.getMainConfig().randomFirework.text.texts.get(rd.nextInt(plugin.getMainConfig().randomFirework.text.texts.size())), plugin.getMainConfig().randomFirework.text.gap, plugin.getMainConfig().randomFirework.text.size);
+            } else {
+                sender = new SingleFirework();
             }
-            PowerfulFireworks.getInstance().nextTick(() -> {
-                UUID uuid = UUID.randomUUID();
-                provider.sendAddEntity(player, provider.createAddFireworkEntityPacket(entityId, uuid, LocationUtil.getRandomLocation(player.getLocation(), LocationUtil.getMaxDistance())), fakeFirework);
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    provider.sendEntityEvent(player, eventPacket);
-                    provider.sendRemoveEntity(player, removePacket);
-                }, rdFlyTime);
-            });
+            sender.execute(rdFlyTime, FireworkUtil.getRandomFireworkItem(sender instanceof TextFirework),  LocationUtil.getRandomLocation(player.getLocation(), LocationUtil.getMaxDistance()), List.of(player));
         }
         start();
     }
