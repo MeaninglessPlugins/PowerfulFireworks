@@ -5,6 +5,8 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 import org.eu.pcraft.powerfulfireworks.utils.Interval;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
+import org.eu.pcraft.powerfulfireworks.utils.sender.SingleFirework;
+import org.eu.pcraft.powerfulfireworks.utils.sender.FireworkSender;
 
 import java.util.*;
 
@@ -15,6 +17,9 @@ class OriginalFireworkNode extends FireworkNode {
     Interval<Double> X = new Interval<>(0.0,0.0);
     Interval<Double> Y = new Interval<>(0.0,0.0);
     Interval<Double> Z = new Interval<>(0.0,0.0);
+
+    FireworkSender sender;
+    
     protected Interval<Double> getDoubleInterval(Map<String, Object> section, String key){
         Object obj = section.get(key);
         if(obj == null)return new Interval<>(0.0, 0.0);
@@ -43,20 +48,11 @@ class OriginalFireworkNode extends FireworkNode {
             double xOff = getOffset(X);
             double yOff = getOffset(Y);
             double zOff = getOffset(Z);
+
+            sender = new SingleFirework(stack);
             // send create and add to id list
             try{
-                int[] id = new int[]{FireworkUtil.broadcastFireworkCreate(
-                        config.players,
-                        stack,
-                        config.startupLocation.clone().add(xOff, yOff, zOff))};
-                // make an explosion task
-                BukkitRunnable fireworkExplosionTask = new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        FireworkUtil.broadcastFireworkExplosion(config.players, id);
-                    }
-                };
-                fireworkExplosionTask.runTaskLater(config.plugin, flyTime);
+                sender.execute(flyTime, stack,config.startupLocation.clone().add(xOff, yOff, zOff), config.players);
             }catch(IllegalArgumentException e){
                 if(Objects.equals(e.getMessage(), "No target specified")){
                     config.plugin.getLogger().info("No target specified");
