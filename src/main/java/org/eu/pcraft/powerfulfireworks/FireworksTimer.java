@@ -22,11 +22,11 @@ public class FireworksTimer extends PepperRollTimer {
 
     @Override
     protected void run() {
-        final NMSProvider provider = plugin.getNms();
-        int entityId = provider.allocateEntityId();
-        final Random rd = new Random();
         FireworkSender sender;
-        for(Player player:plugin.getServer().getOnlinePlayers()){
+        Random rd = new Random();
+        int count = rd.nextInt(plugin.getMainConfig().randomFirework.number.minimum,plugin.getMainConfig().randomFirework.number.maximum);
+        for(int idx = 0; idx<count; idx++)
+        for(Player player : plugin.getServer().getOnlinePlayers()){
             int rdFlyTime = rd.nextInt(plugin.getMainConfig().randomFirework.flyTime.minimum, plugin.getMainConfig().randomFirework.flyTime.maximum);
             if(!player.hasPermission(Permissions.SWITCHES_RANDOMFIREWORKS))
                 continue;
