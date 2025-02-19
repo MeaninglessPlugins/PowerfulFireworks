@@ -4,7 +4,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 import org.eu.pcraft.powerfulfireworks.utils.Interval;
-org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
+import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 
 import java.util.*;
 
