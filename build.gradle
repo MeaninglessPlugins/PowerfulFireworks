@@ -61,7 +61,7 @@ configurations {
 dependencies {
     compileOnly 'io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT'
     include 'org.bstats:bstats-bukkit:3.0.2'
-    compileOnly "com.github.MilkBowl:VaultAPI:1.7"
+    compileOnly "com.github.MilkBowl:VaultAPI:1.7.1"
 
     include project(":nms")
     for (String version : new String[]{"v1_21_4"}) {    // versions with remapper
