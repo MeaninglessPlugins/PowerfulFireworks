@@ -82,7 +82,7 @@ bukkit {
 }
 
 runServer {
-    minecraftVersion("1.20.4")
+    minecraftVersion(project.property("run.version") as String)
 }
 
 tasks.withType(xyz.jpenilla.runtask.task.AbstractRun) {
@@ -112,5 +112,18 @@ shadowJar {
     }
     manifest {
         attributes["paperweight-mappings-namespace"] = "spigot"
+    }
+}
+
+tasks.register("downloadVanillaServer", Exec) {
+    def version = project.property("run.version") as String
+    it.group "run paper"
+    commandLine("curl", "-L", "https://bmclapi2.bangbang93.com/version/$version/server", "-o", "run/cache/mojang_${version}.jar")
+
+    doFirst {
+        def cacheDir = project.layout.projectDirectory.dir("run").dir("cache").asFile
+
+        if (!cacheDir.exists())
+            cacheDir.mkdirs()
     }
 }
