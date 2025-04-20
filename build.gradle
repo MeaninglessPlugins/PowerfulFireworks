@@ -82,7 +82,7 @@ bukkit {
 }
 
 runServer {
-    minecraftVersion("1.20.4")
+    minecraftVersion(project.property("run.version") as String)
 }
 
 tasks.withType(xyz.jpenilla.runtask.task.AbstractRun) {
@@ -100,17 +100,34 @@ compileJava {
 shadowJar {
     configurations = [project.configurations.include]
 
+    dependencies {
+        exclude(dependency("net.kyori:option"))
+    }
+
     relocate "org.bstats", "org.eu.pcraft.powerfulfireworks.bstats"
     def dev = Boolean.parseBoolean(project.getProperties().get("dev").toString())
     println "Dev: ${dev}"
     if (!dev) {
         println "Relocation enabled"
         for (var s in new String[]{"cn.afternode", "io.leangen", "org.spongepowered"}) {
-            relocate s, "org.eu.pcraft.powerfulfireworks.${s}"
+            relocate s, "org.eu.pcraft.powerfulfireworks.libs.${s}"
             println "relocate $s -> org.eu.pcraft.powerfulfireworks.${s}"
         }
     }
     manifest {
         attributes["paperweight-mappings-namespace"] = "spigot"
+    }
+}
+
+tasks.register("downloadVanillaServer", Exec) {
+    def version = project.property("run.version") as String
+    it.group "run paper"
+    commandLine("curl", "-L", "https://bmclapi2.bangbang93.com/version/$version/server", "-o", "run/cache/mojang_${version}.jar")
+
+    doFirst {
+        def cacheDir = project.layout.projectDirectory.dir("run").dir("cache").asFile
+
+        if (!cacheDir.exists())
+            cacheDir.mkdirs()
     }
 }
