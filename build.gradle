@@ -100,13 +100,17 @@ compileJava {
 shadowJar {
     configurations = [project.configurations.include]
 
+    dependencies {
+        exclude(dependency("net.kyori:option"))
+    }
+
     relocate "org.bstats", "org.eu.pcraft.powerfulfireworks.bstats"
     def dev = Boolean.parseBoolean(project.getProperties().get("dev").toString())
     println "Dev: ${dev}"
     if (!dev) {
         println "Relocation enabled"
         for (var s in new String[]{"cn.afternode", "io.leangen", "org.spongepowered"}) {
-            relocate s, "org.eu.pcraft.powerfulfireworks.${s}"
+            relocate s, "org.eu.pcraft.powerfulfireworks.libs.${s}"
             println "relocate $s -> org.eu.pcraft.powerfulfireworks.${s}"
         }
     }
