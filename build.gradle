@@ -71,7 +71,7 @@ dependencies {
         include project(path: ":nms:$version", configuration: "reobf")
     }
 
-    include 'cn.afternode.commons:bukkit:2.7.1'
+    include 'cn.afternode.commons:bukkit:2.10.0'
 }
 
 bukkit {
