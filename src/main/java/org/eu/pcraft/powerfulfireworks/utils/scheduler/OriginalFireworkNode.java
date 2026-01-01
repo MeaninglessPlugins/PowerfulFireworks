@@ -1,10 +1,7 @@
 package org.eu.pcraft.powerfulfireworks.utils.scheduler;
 
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 import org.eu.pcraft.powerfulfireworks.utils.Interval;
-import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.eu.pcraft.powerfulfireworks.utils.sender.SingleFirework;
 import org.eu.pcraft.powerfulfireworks.utils.sender.FireworkSender;
 
@@ -14,9 +11,9 @@ class OriginalFireworkNode extends FireworkNode {
 
     int count = 1;
 
-    Interval<Double> X = new Interval<>(0.0,0.0);
-    Interval<Double> Y = new Interval<>(0.0,0.0);
-    Interval<Double> Z = new Interval<>(0.0,0.0);
+    Interval<Double> xRange = new Interval<>(0.0,0.0);
+    Interval<Double> yRange = new Interval<>(0.0,0.0);
+    Interval<Double> zRange = new Interval<>(0.0,0.0);
 
     FireworkSender sender;
     
@@ -35,9 +32,9 @@ class OriginalFireworkNode extends FireworkNode {
     protected void load(FireworkScheduler scheduler, Map<String, Object> section) {
         super.load(scheduler, section);
         this.count = (int) section.getOrDefault("count", 1);
-        this.X = getDoubleInterval(section,"xOff");
-        this.Y = getDoubleInterval(section,"yOff");
-        this.Z = getDoubleInterval(section,"zOff");
+        this.xRange = getDoubleInterval(section,"xOff");
+        this.yRange = getDoubleInterval(section,"yOff");
+        this.zRange = getDoubleInterval(section,"zOff");
     }
 
     @Override
@@ -45,9 +42,9 @@ class OriginalFireworkNode extends FireworkNode {
         for (int i = 0; i < count; i++) {
             ItemStack stack = getRandomPreset();
 
-            double xOff = getOffset(X);
-            double yOff = getOffset(Y);
-            double zOff = getOffset(Z);
+            double xOff = getOffset(xRange);
+            double yOff = getOffset(yRange);
+            double zOff = getOffset(zRange);
 
             sender = new SingleFirework();
             // send create and add to id list
