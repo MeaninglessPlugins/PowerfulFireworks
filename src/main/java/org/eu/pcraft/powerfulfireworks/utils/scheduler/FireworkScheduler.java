@@ -1,6 +1,7 @@
 package org.eu.pcraft.powerfulfireworks.utils.scheduler;
 
 import com.google.common.base.Verify;
+import de.tr7zw.nbtapi.NBT;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Color;
@@ -27,6 +28,8 @@ public class FireworkScheduler {
     @Getter
     @NotNull
     private final String id;
+    @Getter
+    private final boolean allowActivationByItems;
 
     private final Map<String, ItemStack> presets = new HashMap<>();
     private final List<CommonNode> nodes = new ArrayList<>();
@@ -39,6 +42,14 @@ public class FireworkScheduler {
         config.scheduler = this;
         PowerfulFireworks.getInstance().getSLF4JLogger().info("Executing scheduler {}", id);
         this.execute0(config, new AtomicInteger());
+    }
+
+    public ItemStack createItem() {
+        ItemStack item = new ItemStack(Material.FIREWORK_ROCKET);
+        NBT.modify(item, w -> {
+            w.setString(PowerfulFireworks.ITEM_KEY, this.id);
+        });
+        return item;
     }
 
     private void execute0(FireworkStartupConfig config, AtomicInteger state) {
@@ -69,7 +80,7 @@ public class FireworkScheduler {
     }
 
     public static FireworkScheduler compile(ConfigurationSection config) {
-        FireworkScheduler scheduler = new FireworkScheduler(Verify.verifyNotNull(config.getString("id"), "Null scheduler ID"));
+        FireworkScheduler scheduler = new FireworkScheduler(Verify.verifyNotNull(config.getString("id"), "Null scheduler ID"), config.getBoolean("allowActivationByItems", false));
         ConfigurationSection presets = Verify.verifyNotNull(config.getConfigurationSection("presets"), "presets in scheduler %s", scheduler.id);
         List<Map<String, Object>> nodes = (List<Map<String, Object>>) Verify.verifyNotNull(config.getList("nodes"), "nodes in scheduler %s", scheduler.id);
 
