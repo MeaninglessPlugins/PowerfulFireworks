@@ -6,6 +6,10 @@ api-version: '1.19'
 dependencies:
   server:
     Vault:
-      load: AFTER
+      load: BEFORE
       required: true
+      join-classpath: true
+    NBTAPI:
+      load: BEFORE
+      required: false
       join-classpath: true

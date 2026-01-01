@@ -16,6 +16,7 @@ import org.eu.pcraft.powerfulfireworks.commands.TestCommand;
 import org.eu.pcraft.powerfulfireworks.config.ConfigManager;
 import org.eu.pcraft.powerfulfireworks.config.MessagesConfigModule;
 import org.eu.pcraft.powerfulfireworks.config.PepperConfigModule;
+import org.eu.pcraft.powerfulfireworks.hook.FireworkItemListener;
 import org.eu.pcraft.powerfulfireworks.hook.VaultHook;
 import org.eu.pcraft.powerfulfireworks.nms.NMSSelector;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSProvider;
@@ -32,6 +33,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class PowerfulFireworks extends JavaPlugin {
+    public static final String ITEM_KEY = "powerfulfireworks_id";
+
     @Getter
     private static PowerfulFireworks instance;
 
@@ -112,11 +115,16 @@ public final class PowerfulFireworks extends JavaPlugin {
         // commands
         CommandMap map = Bukkit.getCommandMap();
         map.register("fireworks", new TestCommand());
-        this.mainCommand = new MainCommand();
+        this.mainCommand = new MainCommand(this);
         map.register("fireworks", this.mainCommand);
 
         // Listener
         Bukkit.getPluginManager().registerEvents(new EventListener(), instance);
+        if (Bukkit.getPluginManager().isPluginEnabled("NBTAPI")) {
+            Bukkit.getPluginManager().registerEvents(new FireworkItemListener(), instance);
+        } else {
+            getLogger().info("Disabling item activation because could not find NBTAPI");
+        }
 
         // hook
         boolean isHookingSuccessfully = vaultHook.setup();

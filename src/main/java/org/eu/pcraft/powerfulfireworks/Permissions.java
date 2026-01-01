@@ -13,6 +13,7 @@ public class Permissions {
     public static final Permission CMD_FIREWORKS_RELOAD = new Permission(named("cmd", "fireworks", "reload"));
     public static final Permission CMD_TEST = new Permission(named("cmd", "test"));
     public static final Permission CMD_FIREWORKS_TOGGLE = new Permission(named("cmd", "fireworks", "toggle"));
+    public static final Permission CMD_FIREWORKS_ITEM = new Permission(named("cmd", "fireworks", "item"));
     public static final Permission SWITCHES = new Permission(named("switches"));
     public static final Permission SWITCHES_RANDOMFIREWORKS = new Permission(named("switches", "randomfireworks"));
 
@@ -25,6 +26,7 @@ public class Permissions {
         CMD_FIREWORKS_EXECUTE.addParent(CMD_FIREWORKS, true);
         CMD_FIREWORKS_RELOAD.addParent(CMD_FIREWORKS, true);
         CMD_FIREWORKS_TOGGLE.addParent(CMD_FIREWORKS, true);
+        CMD_FIREWORKS_ITEM.addParent(CMD_FIREWORKS, true);
         CMD_TEST.addParent(CMD, true);
     }
 
