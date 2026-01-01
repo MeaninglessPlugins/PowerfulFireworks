@@ -88,6 +88,8 @@ public class MainCommand extends Command {
             mb.line().text("execute - ").localize("commands.fireworks.help.execute");
         if (sender.hasPermission(Permissions.CMD_FIREWORKS_FONT))
             mb.line().text("font - ").localize("commands.fireworks.help.font");
+        if (sender.hasPermission(Permissions.CMD_FIREWORKS_TOGGLE))
+            mb.line().text("toggle - ").localize("commands.fireworks.help.toggle");
         mb.send();
     }
 

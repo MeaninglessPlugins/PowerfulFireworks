@@ -18,6 +18,7 @@ public class MessagesConfigModule {
             String help = "查看命令帮助";
             String execute = "执行已定义的烟花";
             String font = "预览加载的字体";
+            String toggle = "控制随机烟花";
         }
 
         @ConfigSerializable
