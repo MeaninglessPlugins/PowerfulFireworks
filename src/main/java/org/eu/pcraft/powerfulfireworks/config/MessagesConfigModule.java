@@ -10,6 +10,7 @@ public class MessagesConfigModule {
         String noPermission = "<red>你没有权限执行此操作</red>";
         String invalidArgs = "<red>参数无效，用法：%s</red>";
         String badNum = "<red>无效数字参数</red>";
+        String player = "<red>此命令只允许玩家使用</red>";
 
         @ConfigSerializable
         public static class HelpCommand{
@@ -19,6 +20,7 @@ public class MessagesConfigModule {
             String execute = "执行已定义的烟花";
             String font = "预览加载的字体";
             String toggle = "控制随机烟花";
+            String item = "获取物品烟花";
         }
 
         @ConfigSerializable
@@ -49,12 +51,19 @@ public class MessagesConfigModule {
         }
 
         @ConfigSerializable
+        private static class ItemCommand {
+            String notAllowed = "<red>此烟花不允许使用物品触发</red>";
+            String success = "已生成物品";
+        }
+
+        @ConfigSerializable
         public static class FireworkCommands{
             HelpCommand help = new HelpCommand();
             FontCommand font = new FontCommand();
             ExecuteCommand execute = new ExecuteCommand();
             ReloadCommand reload = new ReloadCommand();
             ToggleCommand toggle = new ToggleCommand();
+            ItemCommand item = new ItemCommand();
         }
 
         FireworkCommands fireworks = new FireworkCommands();

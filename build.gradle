@@ -34,6 +34,10 @@ allprojects {
             name = "sonatype"
             url = "https://oss.sonatype.org/content/groups/public/"
         }
+        maven {
+            name = "CodeMC"
+            url = uri("https://repo.codemc.io/repository/maven-public/")
+        }
         maven { url 'https://jitpack.io' }
     }
 
@@ -72,6 +76,7 @@ dependencies {
     }
 
     include 'cn.afternode.commons:bukkit:2.7.1'
+    compileOnly("de.tr7zw:item-nbt-api-plugin:2.15.5")
 }
 
 bukkit {
@@ -79,10 +84,15 @@ bukkit {
     main = "org.eu.pcraft.powerfulfireworks.PowerfulFireworks"
     apiVersion = "1.18"
     depend = ['Vault']
+    softDepend = ['NBTAPI']
 }
 
 runServer {
     minecraftVersion(project.property("run.version") as String)
+
+    downloadPlugins {
+        modrinth("nbtapi", "2.15.5")
+    }
 }
 
 tasks.withType(xyz.jpenilla.runtask.task.AbstractRun) {
