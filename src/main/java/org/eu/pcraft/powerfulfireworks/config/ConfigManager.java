@@ -28,7 +28,7 @@ public class ConfigManager<T> {
                 .nodeStyle(NodeStyle.BLOCK)
                 .indent(2)
                 .defaultOptions(opts -> opts.serializers(build ->
-                        build.register(TypeToken.get(Interval.class), IntervalSerializer.INSTANCE)))
+                        build.register(Interval.class, IntervalSerializer.INSTANCE)))
                 .path(src) // Set where we will load and save to
                 .build();
         node=loader.createNode();
