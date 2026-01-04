@@ -1,31 +1,64 @@
 package org.eu.pcraft.powerfulfireworks;
 
+import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitTask;
 import org.eu.pcraft.powerfulfireworks.utils.Interval;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
-public class PepperRollTimer {
-    Interval<Integer> delay;
-    PowerfulFireworks plugin;
-    BukkitTask task;
-    Random rand=new Random();
-    public PepperRollTimer(Interval<Integer> interval){
-        delay = interval;
-        plugin = PowerfulFireworks.getInstance();
-    }
-    public void start(){
-        task= Bukkit.getScheduler()
-                .runTaskLaterAsynchronously(plugin,
-                        this::run,
-                        rand.nextInt(delay.minimum,delay.maximum));
-    }
-    public void stop(){
-        task.cancel();
+public abstract class PepperRollTimer {
+
+    private final Interval<Integer> delayRange;
+    protected final PowerfulFireworks plugin;
+
+    @Getter
+    private BukkitTask currentTask;
+
+    public PepperRollTimer(Interval<Integer> interval) {
+        this.delayRange = interval;
+        this.plugin = PowerfulFireworks.getInstance();
     }
 
-    protected void run() {
+    public synchronized void start() {
+        // 如果当前已有任务在运行，先停止它，防止重复调度
+        stop();
 
+        int delay = calculateDelay();
+
+        // 使用 Lambda 表达式清晰地分配任务
+        currentTask = Bukkit.getScheduler().runTaskLaterAsynchronously(
+                plugin,
+                this::internalRun,
+                delay
+        );
+    }
+
+    public synchronized void stop() {
+        if (currentTask != null) {
+            currentTask.cancel();
+            currentTask = null;
+        }
+    }
+
+    private void internalRun() {
+        try {
+            run();
+        } finally {
+            currentTask = null;
+        }
+    }
+
+    protected abstract void run();
+
+    private int calculateDelay() {
+        int min = delayRange.minimum;
+        int max = delayRange.maximum;
+
+        if (min >= max) {
+            return min;
+        }
+
+        return ThreadLocalRandom.current().nextInt(min, max + 1);
     }
 }

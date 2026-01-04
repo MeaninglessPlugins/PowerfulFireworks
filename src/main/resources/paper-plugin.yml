@@ -1,5 +1,5 @@
 name: PowerfulFireworks
-version: '1.0-SNAPSHOT'
+version: '1.5'
 main: org.eu.pcraft.powerfulfireworks.PowerfulFireworks
 description: PowerfulFireworks
 api-version: '1.19'

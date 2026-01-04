@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'org.eu.pcraft'
-version = '1.4'
+version = '1.5'
 dev = project.dev
 
 allprojects {
