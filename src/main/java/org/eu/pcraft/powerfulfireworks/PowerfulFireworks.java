@@ -132,7 +132,7 @@ public final class PowerfulFireworks extends JavaPlugin {
     public void onDisable() {
         //stop timer
         if(timer != null)
-            timer.stop();
+            timer.cancel();
         getLogger().info("PowerfulFireworks has been disabled.");
     }
 
@@ -326,7 +326,7 @@ public final class PowerfulFireworks extends JavaPlugin {
     public void applyConfigurations(){
         // RandomFireworks
         if(timer != null){
-            timer.stop();
+            timer.cancel();
         }
         playerSet.clear();
         if(mainConfig.randomFirework.enabled){
