@@ -38,6 +38,6 @@ public class FireworksTimer extends PepperRollTimer {
                 }
                 sender.execute(rdFlyTime, FireworkUtil.getRandomFireworkItem(sender instanceof TextFirework),  LocationUtil.getRandomLocation(player.getLocation(), LocationUtil.getMaxDistance()), List.of(player));
             }
-        start();
+        if(!this.getCurrentTask().isCancelled()) start();
     }
 }
