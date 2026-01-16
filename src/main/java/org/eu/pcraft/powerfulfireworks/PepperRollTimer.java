@@ -26,7 +26,6 @@ public abstract class PepperRollTimer {
 
         int delay = calculateDelay();
 
-        // 使用 Lambda 表达式清晰地分配任务
         currentTask = Bukkit.getScheduler().runTaskLaterAsynchronously(
                 plugin,
                 this::internalRun,
