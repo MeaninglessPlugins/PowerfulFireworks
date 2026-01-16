@@ -1,15 +1,18 @@
 package org.eu.pcraft.powerfulfireworks.utils.scheduler;
 
 import com.google.common.base.Verify;
-import de.tr7zw.nbtapi.NBT;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -46,9 +49,11 @@ public class FireworkScheduler {
 
     public ItemStack createItem() {
         ItemStack item = new ItemStack(Material.FIREWORK_ROCKET);
-        NBT.modify(item, w -> {
-            w.setString(PowerfulFireworks.ITEM_KEY, this.id);
-        });
+        ItemMeta meta = item.getItemMeta();
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        NamespacedKey key = PowerfulFireworks.ITEM_KEY;
+        pdc.set(key, PersistentDataType.STRING, this.id);
+        item.setItemMeta(meta);
         return item;
     }
 

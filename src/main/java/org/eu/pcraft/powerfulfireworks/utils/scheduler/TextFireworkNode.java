@@ -32,7 +32,7 @@ class TextFireworkNode extends FireworkNode {
         // precalculate lines
         String text = (String) Verify.verifyNotNull(section.get("text"), "text");
         int gap = (int) section.getOrDefault("gap", 1);
-        this.lines = font.fromString(text, gap).getChars();
+        this.lines = font.fromString(text, gap).chars();
 
         // count total characters
         this.total = 0;

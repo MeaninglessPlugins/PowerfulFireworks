@@ -7,11 +7,8 @@ import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
-import io.leangen.geantyref.TypeToken;
 
-import java.lang.reflect.Type;
 import java.nio.file.Path;
-import java.util.function.Predicate;
 
 public class ConfigManager<T> {
     CommentedConfigurationNode node;

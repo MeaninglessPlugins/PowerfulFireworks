@@ -47,7 +47,7 @@ public class TextFirework implements FireworkSender {
     @Override
     public void execute(int flyTime, ItemStack stack, Location originLoc, List<Player> playerList) {
         // 1. 初始化点阵数据
-        this.bitmapLines = font.fromString(text, gap).getChars();
+        this.bitmapLines = font.fromString(text, gap).chars();
 
         // 2. 计算需要生成的实体总数 (烟花总像素点)
         int totalFireworks = calculateTotalPoints(bitmapLines);
