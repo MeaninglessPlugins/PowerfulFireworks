@@ -14,26 +14,36 @@ public abstract class PepperRollTimer {
 
     @Getter
     private BukkitTask currentTask;
+    private boolean running = false; // 状态标记
 
     public PepperRollTimer(Interval<Integer> interval) {
         this.delayRange = interval;
         this.plugin = PowerfulFireworks.getInstance();
     }
 
-    public synchronized void start() {
-        // 如果当前已有任务在运行，先停止它，防止重复调度
+    public void start() {
+        running = true;
+        scheduleNext();
+    }
+
+    private void scheduleNext() {
         stop();
-
+        if (!running) return;
         int delay = calculateDelay();
-
         currentTask = Bukkit.getScheduler().runTaskLaterAsynchronously(
                 plugin,
                 this::internalRun,
                 delay
         );
     }
-
-    public synchronized void stop() {
+    public void cancel(){
+        running = false;
+        if (currentTask != null) {
+            currentTask.cancel();
+            currentTask = null;
+        }
+    }
+    public void stop() {
         if (currentTask != null) {
             currentTask.cancel();
             currentTask = null;
@@ -43,8 +53,11 @@ public abstract class PepperRollTimer {
     private void internalRun() {
         try {
             run();
+        } catch (Exception e) {
+            plugin.getLogger().severe("Timer execution failed: " + e.getMessage());
+            e.printStackTrace();
         } finally {
-            currentTask = null;
+            scheduleNext();
         }
     }
 
@@ -53,11 +66,7 @@ public abstract class PepperRollTimer {
     private int calculateDelay() {
         int min = delayRange.minimum;
         int max = delayRange.maximum;
-
-        if (min >= max) {
-            return min;
-        }
-
+        if (min >= max) return min;
         return ThreadLocalRandom.current().nextInt(min, max + 1);
     }
 }
