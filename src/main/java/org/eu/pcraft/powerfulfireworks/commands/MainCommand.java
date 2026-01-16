@@ -13,7 +13,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.eu.pcraft.powerfulfireworks.Permissions;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
-import org.eu.pcraft.powerfulfireworks.hook.VaultHook;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkScheduler;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkStartupConfig;
@@ -80,14 +79,10 @@ public class MainCommand extends Command {
                     .send();
             return;
         }
-        VaultHook vaultHook=PowerfulFireworks.getInstance().getVaultHook();
-        if(vaultHook.getPerms().has((Player) sender, Permissions.SWITCHES_RANDOMFIREWORKS.getName())){
-            vaultHook.getPerms().playerRemove((Player) sender, Permissions.SWITCHES_RANDOMFIREWORKS.getName());
-        }else{
-            vaultHook.getPerms().playerAdd((Player) sender, Permissions.SWITCHES_RANDOMFIREWORKS.getName());
-        }
+        PowerfulFireworks plugin = PowerfulFireworks.getInstance();
+        plugin.toggleFirework((Player) sender, !plugin.getPlayerSet().contains(sender));
         this.ctx.message(sender)
-                .localize("commands.fireworks.toggle.toggle-message", sender.hasPermission(Permissions.SWITCHES_RANDOMFIREWORKS)?"<green>ON":"<red>OFF")
+                .localize("commands.fireworks.toggle.toggle-message", plugin.getPlayerSet().contains(sender)?"<green>ON":"<red>OFF")
                 .send();
     }
     private void help(CommandSender sender) {

@@ -10,7 +10,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandMap;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.permissions.PermissionDefault;
+import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.eu.pcraft.powerfulfireworks.commands.MainCommand;
 import org.eu.pcraft.powerfulfireworks.commands.TestCommand;
@@ -28,14 +30,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 
 public final class PowerfulFireworks extends JavaPlugin {
 
     public static NamespacedKey ITEM_KEY;
+    public static NamespacedKey TOGGLE_KEY;
 
     @Getter
     private static PowerfulFireworks instance;
@@ -53,7 +54,7 @@ public final class PowerfulFireworks extends JavaPlugin {
     @Getter
     private MessagesConfigModule messageConfig = new MessagesConfigModule();
     @Getter
-    public PepperConfigModule mainConfig = new PepperConfigModule();
+    private PepperConfigModule mainConfig = new PepperConfigModule();
     @Getter private Map<String, BitmapFont> fonts;
     @Getter private Map<String, FireworkScheduler> schedulers;
 
@@ -62,6 +63,7 @@ public final class PowerfulFireworks extends JavaPlugin {
     private MainCommand mainCommand;
 
     FireworksTimer timer;
+    @Getter private Set<Player> playerSet = new HashSet<>();
 
     @Override
     public void onLoad() {
@@ -70,8 +72,10 @@ public final class PowerfulFireworks extends JavaPlugin {
 
         //instance
         PowerfulFireworks.instance = this;
-        ITEM_KEY = new NamespacedKey(instance, "powerfulfireworks-type");
         this.context = new BukkitPluginContext(this);
+
+        ITEM_KEY = new NamespacedKey(instance, "powerfulfireworks-type");
+        TOGGLE_KEY = new NamespacedKey(instance, "powerfulfireworks-toggle");
 
         //config
         loadConfigurations();
@@ -104,8 +108,8 @@ public final class PowerfulFireworks extends JavaPlugin {
         registerCommands();
 
         // Listeners
-        Bukkit.getPluginManager().registerEvents(new EventListener(), this);
         Bukkit.getPluginManager().registerEvents(new FireworkItemListener(), this);
+        Bukkit.getPluginManager().registerEvents(new JoinQuitListener(), this);
 
         // Hooks
         boolean vaultHookingSuccessfully = vaultHook.setup();
@@ -296,21 +300,41 @@ public final class PowerfulFireworks extends JavaPlugin {
             this.mainCommand.setFireworkComp(this.schedulers.keySet().toArray(new String[0]));
         }
     }
-    public void applyConfigurations(){
-        // timer
-        if(timer!=null){
-            timer.stop();
+
+    public void toggleFirework(Player player, boolean value) {
+        PersistentDataContainer container = player.getPersistentDataContainer();
+        container.set(PowerfulFireworks.TOGGLE_KEY, PersistentDataType.BOOLEAN, value);
+        updateToggle(player);
+    }
+    public void updateToggle(Player player){
+        PersistentDataContainer container = player.getPersistentDataContainer();
+        if(!container.has(PowerfulFireworks.TOGGLE_KEY)){
+            if(instance.getMainConfig().randomFirework.turnOnByDefault){
+                container.set(PowerfulFireworks.TOGGLE_KEY, PersistentDataType.BOOLEAN, true);
+            }
+            else{
+                container.set(PowerfulFireworks.TOGGLE_KEY, PersistentDataType.BOOLEAN, false);
+            }
         }
-        if(mainConfig.randomFirework.enabled){
-            timer=new FireworksTimer(mainConfig.randomFirework.delay);
-            timer.start();
-        }
-        // permission
-        if(mainConfig.randomFirework.turnOnByDefault){
-            Permissions.SWITCHES_RANDOMFIREWORKS.setDefault(PermissionDefault.TRUE);
+        if(container.get(PowerfulFireworks.TOGGLE_KEY, PersistentDataType.BOOLEAN).equals(true)){
+            instance.getPlayerSet().add(player);
         }
         else{
-            Permissions.SWITCHES_RANDOMFIREWORKS.setDefault(PermissionDefault.FALSE);
+            instance.getPlayerSet().remove(player);
+        }
+    }
+    public void applyConfigurations(){
+        // RandomFireworks
+        if(timer != null){
+            timer.stop();
+        }
+        playerSet.clear();
+        if(mainConfig.randomFirework.enabled){
+            for(Player p:Bukkit.getOnlinePlayers()){
+                updateToggle(p);
+            }
+            timer = new FireworksTimer(mainConfig.randomFirework.delay);
+            timer.start();
         }
     }
 }
