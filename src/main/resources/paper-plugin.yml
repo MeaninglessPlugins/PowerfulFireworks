@@ -1,5 +1,5 @@
 name: PowerfulFireworks
-version: '1.5'
+version: '1.6'
 main: org.eu.pcraft.powerfulfireworks.PowerfulFireworks
 description: PowerfulFireworks
 api-version: '1.19'
@@ -8,8 +8,4 @@ dependencies:
     Vault:
       load: BEFORE
       required: true
-      join-classpath: true
-    NBTAPI:
-      load: BEFORE
-      required: false
       join-classpath: true

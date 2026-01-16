@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'org.eu.pcraft'
-version = '1.5'
+version = '1.6'
 dev = project.dev
 
 allprojects {
@@ -76,7 +76,6 @@ dependencies {
     }
 
     include 'cn.afternode.commons:bukkit:2.7.1'
-    compileOnly("de.tr7zw:item-nbt-api-plugin:2.15.5")
 }
 
 bukkit {
@@ -84,14 +83,14 @@ bukkit {
     main = "org.eu.pcraft.powerfulfireworks.PowerfulFireworks"
     apiVersion = "1.18"
     depend = ['Vault']
-    softDepend = ['NBTAPI']
 }
+
 
 runServer {
     minecraftVersion(project.property("run.version") as String)
 
     downloadPlugins {
-        modrinth("nbtapi", "2.15.5")
+//        modrinth("nbtapi", "2.15.5")
     }
 }
 

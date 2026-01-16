@@ -1,7 +1,6 @@
 package org.eu.pcraft.powerfulfireworks.utils;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,16 +12,12 @@ import static java.lang.Math.max;
 @AllArgsConstructor
 public class BitmapFont {
 
-    @AllArgsConstructor
-    @Getter
-    public static class CharBitmap{
-        private final String[] chars;
-
-        CharBitmap(int length){
-            chars = new String[length];
-            Arrays.fill(this.chars, "");
+    public record CharBitmap(String[] chars) {
+            CharBitmap(int length) {
+                this(new String[length]);
+                Arrays.fill(this.chars, "");
+            }
         }
-    }
 
     private final Map<Character, CharBitmap> characters;
     private final int charHeight;

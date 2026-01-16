@@ -121,7 +121,7 @@ public class MainCommand extends Command {
                     // Render to string
                     mb.localize("commands.fireworks.font.preview", String.valueOf(args[2].charAt(0)), args[1]);
 
-                    for (String aChar : character.getChars()) {
+                    for (String aChar : character.chars()) {
                         if (aChar == null) {
                             mb.line().localize("commands.fireworks.font.no-char", args[1]);    // no such character
                             break;
@@ -207,8 +207,6 @@ public class MainCommand extends Command {
     }
 
     private void item(CommandSender sender, String[] args) {
-        if (!Bukkit.getPluginManager().isPluginEnabled("NBTAPI"))
-            return;
         if (sender instanceof Player player) {
             if (args.length == 2) {
                 FireworkScheduler sched = PowerfulFireworks.getInstance().getSchedulers().get(args[1]);
