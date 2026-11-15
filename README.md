@@ -6,7 +6,7 @@ _~~充满力量的烟花（大雾~~_
 
 所有烟花都以数据包创建：服务端不生成实体，几百支烟花同时升空也不会拖慢 TPS。
 
-> 旧版文档：https://jlxnb.github.io/PowerfulFireworkWiki/
+Wiki: https://jlxnb.github.io/PowerfulFireworkWiki/
 
 ## 特性
 
@@ -23,11 +23,12 @@ _~~充满力量的烟花（大雾~~_
 | Paper 26.3 | 25 | `v26_3`，发射声与爆炸声都能单独控制 |
 | Paper 1.21.4 / 1.21.5 | 21 | `v1_21_4`，只能控制发射声 |
 | Paper 1.20.2 – 1.20.4 | 17 | `v1_20_2` / `v1_20_4`，只能控制发射声 |
+| Paper 1.18.2 / 1.19.4 | 17 | `v1_18_2` / `v1_19_4`，只能控制发射声 |
 
 - 只支持 Paper 与其衍生端（Purpur、Pufferfish 等），Spigot 不行
 - **Vault** 是硬依赖，会随插件一起加载
-- 插件按 `Bukkit.getMinecraftVersion()` 自动挑选 NMS 实现，jar 里同时带着多个版本
-- `paper-plugin.yml` 的 `api-version` 是 `1.20`，所以低于 1.20 的服务端会拒绝加载。jar 内仍保留 1.18.2 / 1.19.4 的实现，要在这些版本上用就先把 `api-version` 调低再重新打包
+- 插件按 `Bukkit.getMinecraftVersion()` 自动挑选 NMS 实现，jar 里同时带着上面所有版本
+- `paper-plugin.yml` 的 `api-version` 是 `1.18`，与最低支持的 1.18.2 对齐
 
 ## 安装
 
