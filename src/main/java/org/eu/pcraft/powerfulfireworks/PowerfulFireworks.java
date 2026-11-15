@@ -197,8 +197,10 @@ public final class PowerfulFireworks extends JavaPlugin {
     }
 
     private void loadBaseConfigs(Path dataPath) {
-        this.configManager = new ConfigManager<>(dataPath.resolve("config.yml"), mainConfig);
-        this.messagesManager = new ConfigManager<>(dataPath.resolve("messages.yml"), messageConfig);
+        this.configManager = new ConfigManager<>(
+                dataPath.resolve("config.yml"), PepperConfigModule.class, getSLF4JLogger());
+        this.messagesManager = new ConfigManager<>(
+                dataPath.resolve("messages.yml"), MessagesConfigModule.class, getSLF4JLogger());
 
         this.configManager.loadConfig();
         this.messagesManager.loadConfig();

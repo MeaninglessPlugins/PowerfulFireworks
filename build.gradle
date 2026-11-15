@@ -47,8 +47,8 @@ allprojects {
         annotationProcessor 'org.projectlombok:lombok:1.18.46'
         testCompileOnly 'org.projectlombok:lombok:1.18.46'
         testAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
-        implementation 'org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT'
-        implementation 'org.spongepowered:configurate-core:4.2.0-SNAPSHOT'
+        // 配置框架用插件自带的一份（org.eu.pcraft.powerfulfireworks.libs.config），
+        // 它依赖 snakeyaml，由根工程的 include 配置打进 jar 并重定位。
     }
 }
 
@@ -78,6 +78,8 @@ dependencies {
     }
 
     include 'cn.afternode.commons:bukkit:2.7.1'
+    // 内置配置框架的 YAML 引擎；重定位后与各版本服务端自带的 snakeyaml 互不影响
+    include 'org.yaml:snakeyaml:2.6'
 }
 
 bukkit {
@@ -115,11 +117,13 @@ shadowJar {
     }
 
     relocate "org.bstats", "org.eu.pcraft.powerfulfireworks.bstats"
+    // snakeyaml 只被内置配置框架使用，重定位避免和不同版本服务端自带的版本打架
+    relocate "org.yaml.snakeyaml", "org.eu.pcraft.powerfulfireworks.libs.snakeyaml"
     def dev = Boolean.parseBoolean(project.getProperties().get("dev").toString())
     println "Dev: ${dev}"
     if (!dev) {
         println "Relocation enabled"
-        for (var s in new String[]{"cn.afternode", "io.leangen", "org.spongepowered"}) {
+        for (var s in new String[]{"cn.afternode"}) {
             relocate s, "org.eu.pcraft.powerfulfireworks.libs.${s}"
             println "relocate $s -> org.eu.pcraft.powerfulfireworks.${s}"
         }

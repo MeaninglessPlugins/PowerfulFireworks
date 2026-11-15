@@ -94,3 +94,7 @@ plugins/PowerfulFireworks/
 ```properties
 org.gradle.java.installations.paths=/path/to/jdk-17,/path/to/jdk-21,/path/to/jdk-25
 ```
+
+## 第三方
+
+- 配置框架的源码取自 PepperLib（MIT 许可，见 `LICENSE-pepperlib.txt`），已经内置在插件里，不需要额外安装前置。
