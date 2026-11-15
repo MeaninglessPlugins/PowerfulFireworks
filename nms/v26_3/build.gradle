@@ -1,0 +1,52 @@
+plugins {
+    id "io.papermc.paperweight.userdev"
+}
+
+dependencies {
+    paperweight.paperDevBundle("26.3.build.244-stable")
+    api project(":nms:common")
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+// 根项目把模块钉在 Java 21，Gradle 会据此挑 JVM 21 的依赖；26.3 的 dev bundle 只有 Java 25，
+// 所以这两个 classpath 按 25 解析，输出的字节码仍是 21（见下）。
+configurations.matching { it.name == "compileClasspath" || it.name == "runtimeClasspath" }.configureEach {
+    attributes {
+        attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 25)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    // 用 25 的 toolchain 编译，但输出 21 的字节码：主工程与其它模块的工具链是 21/17，读不了 25 的类文件。
+    options.compilerArgs.addAll(["-source", "21", "-target", "21"])
+}
+
+// 26.x 没有 reobf 映射，这个变体永远构建不出来，直接关掉。
+configurations.named("reobf") {
+    canBeConsumed = false
+    canBeResolved = false
+}
+
+// 26.x 是 Mojang 映射、运行时不再重映射，所以直接把普通 jar 交给消费者。
+// 这里刻意不带 target JVM 属性：带上会与 dev bundle 的变体冲突，而消费它的模块以 17 编译，
+// javac 读 Java 21 的类文件本身没有问题。
+configurations {
+    mojangJar {
+        canBeConsumed = true
+        canBeResolved = false
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+            attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
+        }
+    }
+}
+
+artifacts {
+    mojangJar tasks.named("jar")
+}

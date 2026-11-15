@@ -12,7 +12,7 @@ public interface NMSProvider {
     NMSAddEntityPacket createAddFireworkEntityPacket(int id, UUID uuid, Location location);
     NMSEntityEventPacket createEntityEvent(int entity, byte event);
     NMSEntityDataPacket createFireworkEntityDataPacket(int id, ItemStack item);
-    NMSRemoveEntityPacket createRemoveEntityPacket(int... id);
+    NMSRemoveEntityPacket createRemoveEntityPacket(int... ids);
 
     void sendAddEntity(Player player, NMSAddEntityPacket addEntityPacket, NMSEntityDataPacket dataPacket);
     void sendEntityEvent(Player player, NMSEntityEventPacket packet);

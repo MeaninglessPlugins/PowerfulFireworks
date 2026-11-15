@@ -21,3 +21,11 @@ configurations.reobf {
     extendsFrom(configurations.apiElements)
     extendsFrom(configurations.runtimeElements)
 }
+
+// These pre-26 dev bundles are patched against a Java 17 decompilation, so
+// paperweight's setup tools must run on 17 (its own default) to apply cleanly.
+paperweight {
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    })
+}

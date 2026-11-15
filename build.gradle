@@ -3,7 +3,7 @@ plugins {
     id("xyz.jpenilla.run-paper") version "2.3.1"
     id 'com.gradleup.shadow' version '9.0.0-beta4'
 
-    id "io.papermc.paperweight.userdev" version "2.0.0-beta.10" apply false
+    id "io.papermc.paperweight.userdev" version "2.0.0-beta.21" apply false
 }
 
 group = 'org.eu.pcraft'
@@ -43,10 +43,10 @@ allprojects {
 
     dependencies {
         // lombok
-        compileOnly 'org.projectlombok:lombok:1.18.36'
-        annotationProcessor 'org.projectlombok:lombok:1.18.36'
-        testCompileOnly 'org.projectlombok:lombok:1.18.36'
-        testAnnotationProcessor 'org.projectlombok:lombok:1.18.36'
+        compileOnly 'org.projectlombok:lombok:1.18.46'
+        annotationProcessor 'org.projectlombok:lombok:1.18.46'
+        testCompileOnly 'org.projectlombok:lombok:1.18.46'
+        testAnnotationProcessor 'org.projectlombok:lombok:1.18.46'
         implementation 'org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT'
         implementation 'org.spongepowered:configurate-core:4.2.0-SNAPSHOT'
     }
@@ -68,6 +68,8 @@ dependencies {
     compileOnly "com.github.MilkBowl:VaultAPI:1.7"
 
     include project(":nms")
+    // 26.x 是 Mojang 映射、运行时不重映射，直接打包普通 jar（见 nms/v26_3/build.gradle）
+    include project(path: ":nms:v26_3", configuration: "mojangJar")
     for (String version : new String[]{"v1_21_4"}) {    // versions with remapper
         include project(path: ":nms:$version")
     }
@@ -81,7 +83,7 @@ dependencies {
 bukkit {
     name = "PowerfulFireworks"
     main = "org.eu.pcraft.powerfulfireworks.PowerfulFireworks"
-    apiVersion = "1.18"
+    apiVersion = "1.20"
     depend = ['Vault']
 }
 
@@ -96,8 +98,7 @@ runServer {
 
 tasks.withType(xyz.jpenilla.runtask.task.AbstractRun) {
     javaLauncher = javaToolchains.launcherFor {
-        vendor = JvmVendorSpec.JETBRAINS
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
     jvmArgs("-XX:+AllowEnhancedClassRedefinition")
 }

@@ -11,6 +11,7 @@ import static java.util.Map.entry;
 
 public class NMSSelector {
     static List<Map.Entry<String, Supplier<NMSProvider>>> versionList = List.of(
+            entry("26.3", org.eu.pcraft.powerfulfireworks.nms.v26_3.NMSProviderImpl::new),
             entry("1.20.5", NMSProviderImpl::new),
             entry("1.20.4", org.eu.pcraft.powerfulfireworks.nms.v1_20_4.NMSProviderImpl::new),
             entry("1.20.2", org.eu.pcraft.powerfulfireworks.nms.v1_20_2.NMSProviderImpl::new),
