@@ -36,9 +36,10 @@ public class FireworksTimer extends PepperRollTimer {
                 if (config.text.enabled && rd.nextDouble() <= config.text.chance) {
                     BitmapFont font = plugin.getFonts().get(config.text.font);
                     String text = config.text.texts.get(rd.nextInt(config.text.texts.size()));
-                    sender = new TextFirework(font, text, config.text.gap, config.text.size);
+                    sender = new TextFirework(font, text, config.text.gap, config.text.size,
+                            config.text.launchChance, config.text.explosionChance);
                 } else {
-                    sender = new SingleFirework();
+                    sender = new SingleFirework(config.launchChance, config.explosionChance);
                 }
 
                 sender.execute(

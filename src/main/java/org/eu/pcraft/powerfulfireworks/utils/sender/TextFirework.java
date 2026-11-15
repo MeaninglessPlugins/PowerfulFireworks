@@ -16,6 +16,7 @@ import org.eu.pcraft.powerfulfireworks.utils.FlightUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static org.eu.pcraft.powerfulfireworks.utils.LocationUtil.calculatePoint;
 
@@ -27,17 +28,25 @@ public class TextFirework implements FireworkSender {
     private final int gap;
     private final double size;
     private final BlockFace face;
+    /** 每个火箭发射声的播放概率：0 全部静音，1 全部发声 */
+    private final double launchChance;
+    /** 每个火箭爆炸声的播放概率：0 全部静音，1 全部发声 */
+    private final double explosionChance;
 
-    public TextFirework(BitmapFont font, String text, int gap, double size) {
-        this(font, text, gap, size, null);
+    public TextFirework(BitmapFont font, String text, int gap, double size,
+                        double launchChance, double explosionChance) {
+        this(font, text, gap, size, null, launchChance, explosionChance);
     }
 
-    public TextFirework(BitmapFont font, String text, int gap, double size, BlockFace face) {
+    public TextFirework(BitmapFont font, String text, int gap, double size, BlockFace face,
+                        double launchChance, double explosionChance) {
         this.font = font;
         this.text = text;
         this.gap = gap;
         this.size = size;
         this.face = face;
+        this.launchChance = launchChance;
+        this.explosionChance = explosionChance;
     }
 
     @Override
@@ -55,14 +64,21 @@ public class TextFirework implements FireworkSender {
         UUID[] entityUuids = new UUID[totalFireworks];
         FireworkSender.calculateEntityIds(entityIds, entityUuids);
 
-        // 4. 发送生成包 (根据是否固定朝向分流处理)
-        if (face != null) {
-            handleFixedDirection(bitmapLines, entityIds, entityUuids, stack, originLoc, playerList);
-        } else {
-            handleDynamicDirection(bitmapLines, entityIds, entityUuids, stack, originLoc, playerList);
+        // 4. 每个火箭独立掷一次发射声，没掷中的整支静音
+        boolean[] silent = new boolean[totalFireworks];
+        ThreadLocalRandom rd = ThreadLocalRandom.current();
+        for (int i = 0; i < totalFireworks; i++) {
+            silent[i] = rd.nextDouble() >= launchChance;
         }
 
-        // 5. 创建爆炸任务 (延迟引爆)
+        // 5. 发送生成包 (根据是否固定朝向分流处理)
+        if (face != null) {
+            handleFixedDirection(bitmapLines, entityIds, entityUuids, silent, stack, originLoc, playerList);
+        } else {
+            handleDynamicDirection(bitmapLines, entityIds, entityUuids, silent, stack, originLoc, playerList);
+        }
+
+        // 6. 创建爆炸任务 (延迟引爆)
         //    按文字最高的一行（每行比基准点高 size）裁剪飞行时间，
         //    保证整块字都在客户端 64 格的渲染范围内引爆。
         Location topMost = originLoc.clone().add(0, bitmapLines.length * size, 0);
@@ -71,7 +87,7 @@ public class TextFirework implements FireworkSender {
         new BukkitRunnable() {
             @Override
             public void run() {
-                FireworkUtil.broadcastFireworkExplosion(playerList, entityIds);
+                FireworkUtil.broadcastFireworkExplosion(playerList, explosionChance, entityIds);
             }
         }.runTaskLater(PowerfulFireworks.getInstance(), safeFlyTime);
     }
@@ -79,7 +95,7 @@ public class TextFirework implements FireworkSender {
     /**
      * 处理固定朝向的烟花
      */
-    private void handleFixedDirection(String[] bitmapLines, int[] entityIds, UUID[] entityUuids,
+    private void handleFixedDirection(String[] bitmapLines, int[] entityIds, UUID[] entityUuids, boolean[] silent,
                                       ItemStack stack, Location originLoc, List<Player> recipients) {
         int length = bitmapLines[0].length();
         List<Location> currentLocs = new ArrayList<>();
@@ -109,7 +125,7 @@ public class TextFirework implements FireworkSender {
                 Location loc = currentLocs.get(i).add(0, size, 0);
 
                 if (line.charAt(i) != '0') {
-                    sendPacketToAll(recipients, entityIds[currentIdIndex], entityUuids[currentIdIndex], loc, stack);
+                    sendPacketToAll(recipients, entityIds[currentIdIndex], entityUuids[currentIdIndex], loc, stack, silent[currentIdIndex]);
                     currentIdIndex++;
                 }
             }
@@ -119,7 +135,7 @@ public class TextFirework implements FireworkSender {
     /**
      * 处理动态朝向的烟花 (修改为从下往上生成)
      */
-    private void handleDynamicDirection(String[] bitmapLines, int[] entityIds, UUID[] entityUuids,
+    private void handleDynamicDirection(String[] bitmapLines, int[] entityIds, UUID[] entityUuids, boolean[] silent,
                                         ItemStack stack, Location originLoc, List<Player> recipients) {
         int length = bitmapLines[0].length();
 
@@ -141,7 +157,7 @@ public class TextFirework implements FireworkSender {
                     Location loc = currentLocs.get(i).add(0, size, 0);
 
                     if (line.charAt(i) != '0') {
-                        sendSinglePacket(p, entityIds[currentIdIndex], entityUuids[currentIdIndex], loc, stack);
+                        sendSinglePacket(p, entityIds[currentIdIndex], entityUuids[currentIdIndex], loc, stack, silent[currentIdIndex]);
                         currentIdIndex++;
                     }
                 }
@@ -150,16 +166,16 @@ public class TextFirework implements FireworkSender {
     }
 
     // 发送给单个玩家
-    private void sendSinglePacket(Player p, int id, UUID uuid, Location loc, ItemStack stack) {
+    private void sendSinglePacket(Player p, int id, UUID uuid, Location loc, ItemStack stack, boolean silent) {
         NMSAddEntityPacket add = nms.createAddFireworkEntityPacket(id, uuid, loc);
-        NMSEntityDataPacket data = nms.createFireworkEntityDataPacket(id, stack);
+        NMSEntityDataPacket data = nms.createFireworkEntityDataPacket(id, stack, silent);
         nms.sendAddEntity(p, add, data);
     }
 
     // 广播给玩家
-    private void sendPacketToAll(List<Player> players, int id, UUID uuid, Location loc, ItemStack stack) {
+    private void sendPacketToAll(List<Player> players, int id, UUID uuid, Location loc, ItemStack stack, boolean silent) {
         NMSAddEntityPacket add = nms.createAddFireworkEntityPacket(id, uuid, loc);
-        NMSEntityDataPacket data = nms.createFireworkEntityDataPacket(id, stack);
+        NMSEntityDataPacket data = nms.createFireworkEntityDataPacket(id, stack, silent);
         for (Player p : players) {
             nms.sendAddEntity(p, add, data);
         }

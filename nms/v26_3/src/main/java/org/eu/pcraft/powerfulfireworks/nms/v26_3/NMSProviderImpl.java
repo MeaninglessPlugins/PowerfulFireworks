@@ -6,9 +6,11 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.phys.Vec3;
@@ -36,6 +38,21 @@ public class NMSProviderImpl implements NMSProvider {
 
     private final MethodHandle mhEntityEventConstructor;
     private final VarHandle vhEntityEventEntityId;
+
+    /** Entity#DATA_SILENT 是 private static，客户端 tick() 靠它决定要不要播放发射声。 */
+    private static final EntityDataAccessor<Boolean> DATA_SILENT = resolveDataSilent();
+
+    private static EntityDataAccessor<Boolean> resolveDataSilent() {
+        try {
+            Field field = Entity.class.getDeclaredField("DATA_SILENT");
+            field.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            EntityDataAccessor<Boolean> accessor = (EntityDataAccessor<Boolean>) field.get(null);
+            return accessor;
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     public NMSProviderImpl() {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -76,9 +93,31 @@ public class NMSProviderImpl implements NMSProvider {
 
     @Override
     public NMSEntityDataPacket createFireworkEntityDataPacket(int id, ItemStack item) {
+        return createFireworkEntityDataPacket(id, item, false);
+    }
+
+    @Override
+    public NMSEntityDataPacket createFireworkEntityDataPacket(int id, ItemStack item, boolean silent) {
         net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
+        SynchedEntityData.DataValue<?> fireworks =
+                SynchedEntityData.DataValue.create(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, nms);
+        if (!silent) {
+            return new NMSEntityDataPacketImpl(new ClientboundSetEntityDataPacket(id, List.of(fireworks)));
+        }
         return new NMSEntityDataPacketImpl(new ClientboundSetEntityDataPacket(id, List.of(
-                SynchedEntityData.DataValue.create(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, nms))));
+                fireworks,
+                SynchedEntityData.DataValue.create(DATA_SILENT, true))));
+    }
+
+    @Override
+    public NMSEntityDataPacket createSilentEntityDataPacket(int id, boolean silent) {
+        return new NMSEntityDataPacketImpl(new ClientboundSetEntityDataPacket(id, List.of(
+                SynchedEntityData.DataValue.create(DATA_SILENT, silent))));
+    }
+
+    @Override
+    public void sendEntityData(Player player, NMSEntityDataPacket packet) {
+        connection(player).send(((NMSEntityDataPacketImpl) packet).unwrap());
     }
 
     @Override

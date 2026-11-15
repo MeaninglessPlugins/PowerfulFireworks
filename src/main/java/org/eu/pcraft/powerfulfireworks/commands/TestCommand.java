@@ -34,7 +34,7 @@ public class TestCommand extends Command {
                 final int id = provider.allocateEntityId();
                 UUID uuid = UUID.randomUUID();
                 final NMSAddEntityPacket add = provider.createAddFireworkEntityPacket(id, uuid, player.getLocation().add(0.0, 10.0, 0.0));
-                final NMSEntityDataPacket data = provider.createFireworkEntityDataPacket(id, item);
+                final NMSEntityDataPacket data = provider.createFireworkEntityDataPacket(id, item, false);
                 final NMSEntityEventPacket event = provider.createEntityEvent(id, (byte) 17);
                 final NMSRemoveEntityPacket remove = provider.createRemoveEntityPacket(id);
                 PowerfulFireworks.getInstance().nextTick(() -> {

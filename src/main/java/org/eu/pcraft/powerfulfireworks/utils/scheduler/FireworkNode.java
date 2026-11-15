@@ -10,12 +10,18 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class FireworkNode extends CommonNode{
     protected int flyTime;
+    /** 该节点下每个烟花发射声的播放概率：0 全部静音，1 全部发声 */
+    protected double launchChance = 0.1;
+    /** 该节点下每个烟花爆炸声的播放概率：0 全部静音，1 全部发声 */
+    protected double explosionChance = 0.2;
     final List<ItemStack> presets = new ArrayList<>();
     ThreadLocalRandom rd = ThreadLocalRandom.current();
 
     @Override
     protected void load(FireworkScheduler scheduler, Map<String, Object> section) {
         this.flyTime = (int) section.getOrDefault("flyTime", 0);
+        this.launchChance = ((Number) section.getOrDefault("launchChance", 0.1)).doubleValue();
+        this.explosionChance = ((Number) section.getOrDefault("explosionChance", 0.2)).doubleValue();
         // presets
         List<String> pr = (List<String>) section.get("presets");
         if (pr != null) {

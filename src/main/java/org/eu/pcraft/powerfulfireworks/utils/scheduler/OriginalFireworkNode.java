@@ -46,7 +46,7 @@ class OriginalFireworkNode extends FireworkNode {
             double yOff = getOffset(yRange);
             double zOff = getOffset(zRange);
 
-            sender = new SingleFirework();
+            sender = new SingleFirework(this.launchChance, this.explosionChance);
             // send create and add to id list
             try{
                 sender.execute(flyTime, stack, config.startupLocation.clone().add(xOff, yOff, zOff), config.players);

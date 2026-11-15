@@ -44,10 +44,10 @@ class TextFireworkNode extends FireworkNode {
         this.face = BlockFace.valueOf((String) section.getOrDefault("face", "EAST"));
 
         if(this.rotate){
-            firework = new TextFirework(font, text, gap, this.size);
+            firework = new TextFirework(font, text, gap, this.size, this.launchChance, this.explosionChance);
         }
         else {
-            firework = new TextFirework(font, text, gap, this.size, this.face);
+            firework = new TextFirework(font, text, gap, this.size, this.face, this.launchChance, this.explosionChance);
         }
     }
 

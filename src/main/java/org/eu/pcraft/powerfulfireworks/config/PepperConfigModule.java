@@ -21,6 +21,10 @@ public class PepperConfigModule {
         public List<String> texts = List.of("Hello World!");
         public int gap = 2;
         public double chance = 0.05;
+        @Comment("单个火箭发射声（嗖）的播放概率：0 全部静音，1 全部发声")
+        public double launchChance = 0.05;
+        @Comment("单个火箭爆炸声（砰）的播放概率：0 全部静音，1 全部发声")
+        public double explosionChance = 0.1;
     }
     @ConfigSerializable
     public static class RandomFirework{
@@ -31,6 +35,10 @@ public class PepperConfigModule {
         public boolean automaticDistance = true;
         public int distance = 20;
         public Interval<Integer> flyTime = new Interval<>(25, 50);
+        @Comment("单个烟花发射声（嗖）的播放概率：0 全部静音，1 全部发声")
+        public double launchChance = 0.1;
+        @Comment("单个烟花爆炸声（砰）的播放概率：0 全部静音，1 全部发声")
+        public double explosionChance = 0.2;
         public List<String> blacklistWorlds = List.of("world_nether");
         public RandomFireworkText text = new RandomFireworkText();
     }

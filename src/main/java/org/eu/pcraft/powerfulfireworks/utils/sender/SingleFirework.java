@@ -14,16 +14,25 @@ import java.util.List;
 @Getter
     public class SingleFirework implements FireworkSender{
 
+        private final double launchChance;
+        private final double explosionChance;
+
+        public SingleFirework(double launchChance, double explosionChance) {
+            this.launchChance = launchChance;
+            this.explosionChance = explosionChance;
+        }
+
         @Override
         public void execute(int flyTime, ItemStack stack, Location fwLoc, List<Player> playerList) {
             int[] id = {FireworkUtil.broadcastFireworkCreate(
                         playerList,
                         stack,
-                        fwLoc)};
+                        fwLoc,
+                        launchChance)};
             BukkitRunnable fireworkExplosionTask = new BukkitRunnable() {
                 @Override
                 public void run() {
-                    FireworkUtil.broadcastFireworkExplosion(playerList, id);
+                    FireworkUtil.broadcastFireworkExplosion(playerList, explosionChance, id);
                 }
             };
             // 按客户端 64 格渲染范围裁剪飞行时间，避免火箭在引爆前被截断
