@@ -30,7 +30,7 @@ public class PepperConfigModule {
         public Interval<Integer> number = new Interval<>(2,5);
         public boolean automaticDistance = true;
         public int distance = 20;
-        public Interval<Integer> flyTime = new Interval<>(30,70);
+        public Interval<Integer> flyTime = new Interval<>(25, 50);
         public List<String> blacklistWorlds = List.of("world_nether");
         public RandomFireworkText text = new RandomFireworkText();
     }

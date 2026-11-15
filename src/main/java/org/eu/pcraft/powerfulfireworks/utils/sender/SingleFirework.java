@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
+import org.eu.pcraft.powerfulfireworks.utils.FlightUtil;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 
 import java.util.List;
@@ -25,6 +26,8 @@ import java.util.List;
                     FireworkUtil.broadcastFireworkExplosion(playerList, id);
                 }
             };
-            fireworkExplosionTask.runTaskLater(PowerfulFireworks.getInstance(), flyTime);
+            // 按客户端 64 格渲染范围裁剪飞行时间，避免火箭在引爆前被截断
+            fireworkExplosionTask.runTaskLater(PowerfulFireworks.getInstance(),
+                    FlightUtil.clampFlyTime(flyTime, fwLoc, playerList));
         }
     }

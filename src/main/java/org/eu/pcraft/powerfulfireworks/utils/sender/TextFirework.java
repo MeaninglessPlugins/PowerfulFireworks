@@ -11,6 +11,7 @@ import org.eu.pcraft.powerfulfireworks.nms.common.NMSAddEntityPacket;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSEntityDataPacket;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
+import org.eu.pcraft.powerfulfireworks.utils.FlightUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,11 +28,6 @@ public class TextFirework implements FireworkSender {
     private final double size;
     private final BlockFace face;
 
-    // 缓存计算结果，避免重复计算
-    private String[] bitmapLines;
-    private int[] entityIds;
-    private UUID[] entityUuids;
-
     public TextFirework(BitmapFont font, String text, int gap, double size) {
         this(font, text, gap, size, null);
     }
@@ -47,43 +43,51 @@ public class TextFirework implements FireworkSender {
     @Override
     public void execute(int flyTime, ItemStack stack, Location originLoc, List<Player> playerList) {
         // 1. 初始化点阵数据
-        this.bitmapLines = font.fromString(text, gap).chars();
+        //    点阵、id、uuid 都是本次执行的局部状态：同一实例会被连续调用，
+        //    而爆炸任务延迟执行，这些数据不能挂在实例字段上。
+        String[] bitmapLines = font.fromString(text, gap).chars();
 
         // 2. 计算需要生成的实体总数 (烟花总像素点)
         int totalFireworks = calculateTotalPoints(bitmapLines);
 
         // 3. 生成所有烟花实体的 ID 和 UUID (所有玩家看到的是同一组实体 ID)
-        this.entityIds = new int[totalFireworks + 1];
-        this.entityUuids = new UUID[totalFireworks + 1];
-        FireworkSender.calculateEntityIds(totalFireworks, entityIds, entityUuids);
+        int[] entityIds = new int[totalFireworks];
+        UUID[] entityUuids = new UUID[totalFireworks];
+        FireworkSender.calculateEntityIds(entityIds, entityUuids);
 
         // 4. 发送生成包 (根据是否固定朝向分流处理)
         if (face != null) {
-            handleFixedDirection(stack, originLoc, playerList);
+            handleFixedDirection(bitmapLines, entityIds, entityUuids, stack, originLoc, playerList);
         } else {
-            handleDynamicDirection(stack, originLoc, playerList);
+            handleDynamicDirection(bitmapLines, entityIds, entityUuids, stack, originLoc, playerList);
         }
 
         // 5. 创建爆炸任务 (延迟引爆)
+        //    按文字最高的一行（每行比基准点高 size）裁剪飞行时间，
+        //    保证整块字都在客户端 64 格的渲染范围内引爆。
+        Location topMost = originLoc.clone().add(0, bitmapLines.length * size, 0);
+        int safeFlyTime = FlightUtil.clampFlyTime(flyTime, topMost, playerList);
+
         new BukkitRunnable() {
             @Override
             public void run() {
                 FireworkUtil.broadcastFireworkExplosion(playerList, entityIds);
             }
-        }.runTaskLater(PowerfulFireworks.getInstance(), flyTime);
+        }.runTaskLater(PowerfulFireworks.getInstance(), safeFlyTime);
     }
 
     /**
      * 处理固定朝向的烟花
      */
-    private void handleFixedDirection(ItemStack stack, Location originLoc, List<Player> recipients) {
+    private void handleFixedDirection(String[] bitmapLines, int[] entityIds, UUID[] entityUuids,
+                                      ItemStack stack, Location originLoc, List<Player> recipients) {
         int length = bitmapLines[0].length();
         List<Location> currentLocs = new ArrayList<>();
 
         int xMod = face.getModX();
         int zMod = face.getModZ();
 
-        // 计算起始 X 和 Z (保持原有的水平居中逻辑)
+        // 计算起始 X 和 Z（水平居中）
         double startX = originLoc.getX() - ((xMod * size * length) / 2.0);
         double startZ = originLoc.getZ() - ((zMod * size * length) / 2.0);
 
@@ -115,7 +119,8 @@ public class TextFirework implements FireworkSender {
     /**
      * 处理动态朝向的烟花 (修改为从下往上生成)
      */
-    private void handleDynamicDirection(ItemStack stack, Location originLoc, List<Player> recipients) {
+    private void handleDynamicDirection(String[] bitmapLines, int[] entityIds, UUID[] entityUuids,
+                                        ItemStack stack, Location originLoc, List<Player> recipients) {
         int length = bitmapLines[0].length();
 
         for (Player p : recipients) {
