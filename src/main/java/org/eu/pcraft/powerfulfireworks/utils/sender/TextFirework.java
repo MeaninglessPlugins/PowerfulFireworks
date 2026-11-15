@@ -58,6 +58,10 @@ public class TextFirework implements FireworkSender {
 
         // 2. 计算需要生成的实体总数 (烟花总像素点)
         int totalFireworks = calculateTotalPoints(bitmapLines);
+        if (bitmapLines.length == 0 || totalFireworks == 0) {
+            // 空串或全空白：没有可放的点，不发包也不建爆炸任务
+            return;
+        }
 
         // 3. 生成所有烟花实体的 ID 和 UUID (所有玩家看到的是同一组实体 ID)
         int[] entityIds = new int[totalFireworks];

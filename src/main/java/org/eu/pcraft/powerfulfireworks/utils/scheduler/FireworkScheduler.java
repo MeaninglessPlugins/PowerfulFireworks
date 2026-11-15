@@ -72,7 +72,12 @@ public class FireworkScheduler {
                 if (node instanceof WaitFireworkNode wait) { // wait and next
                     plugin.runAfter(wait.ticks, () -> this.execute0(config, state));
                 } else {
-                    node.execute(config);   // execute now
+                    try {
+                        node.execute(config);   // execute now
+                    } catch (Throwable t) {
+                        // 单个节点出错就跳过它，别让整场演出停在这里
+                        logger.warn("Node {} of scheduler {} failed", node, this.id, t);
+                    }
                     this.execute0(config, state);    // schedule next
                 }
             }
