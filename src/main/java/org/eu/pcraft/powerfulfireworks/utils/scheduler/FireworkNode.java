@@ -19,19 +19,25 @@ public abstract class FireworkNode extends CommonNode{
 
     @Override
     protected void load(FireworkScheduler scheduler, Map<String, Object> section) {
-        this.flyTime = (int) section.getOrDefault("flyTime", 0);
+        this.flyTime = ((Number) section.getOrDefault("flyTime", 0)).intValue();
         this.launchChance = ((Number) section.getOrDefault("launchChance", 0.1)).doubleValue();
         this.explosionChance = ((Number) section.getOrDefault("explosionChance", 0.2)).doubleValue();
-        // presets
-        List<String> pr = (List<String>) section.get("presets");
-        if (pr != null) {
-            for (String s : pr) {
-                ItemStack p = scheduler.getPreset(s);
-                if (p == null)
-                    throw new IllegalArgumentException("preset " + s);
-                presets.add(p);
+        // presets，允许写单个名字或名字列表
+        Object presetSection = section.get("presets");
+        if (presetSection instanceof String single) {
+            addPreset(scheduler, single);
+        } else if (presetSection instanceof List<?> list) {
+            for (Object o : list) {
+                addPreset(scheduler, String.valueOf(o));
             }
         }
+    }
+
+    private void addPreset(FireworkScheduler scheduler, String id) {
+        ItemStack preset = scheduler.getPreset(id);
+        if (preset == null)
+            throw new IllegalArgumentException("Unknown preset " + id);
+        presets.add(preset);
     }
 
     ItemStack getRandomPreset() {

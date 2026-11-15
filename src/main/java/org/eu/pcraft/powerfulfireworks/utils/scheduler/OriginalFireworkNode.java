@@ -20,7 +20,16 @@ class OriginalFireworkNode extends FireworkNode {
     protected Interval<Double> getDoubleInterval(Map<String, Object> section, String key){
         Object obj = section.get(key);
         if(obj == null)return new Interval<>(0.0, 0.0);
-        return new Interval<>(obj);
+        if(obj instanceof Number n)return new Interval<>(n.doubleValue(), n.doubleValue());
+        if(obj instanceof List<?> list && list.size() >= 2)
+            return new Interval<>(toDouble(list.get(0)), toDouble(list.get(1)));
+        if(obj instanceof Map<?, ?> map)
+            return new Interval<>(toDouble(map.get("minimum")), toDouble(map.get("maximum")));
+        throw new IllegalArgumentException(key + " 需要数字、[最小值, 最大值] 或 {minimum, maximum}，当前为 " + obj);
+    }
+    private static double toDouble(Object obj){
+        if(obj instanceof Number n)return n.doubleValue();
+        throw new IllegalArgumentException("偏移量必须是数字，当前为 " + obj);
     }
     protected Double getOffset(Interval<Double> interval){
         if(Objects.equals(interval.maximum, interval.minimum)){
@@ -31,7 +40,7 @@ class OriginalFireworkNode extends FireworkNode {
     @Override
     protected void load(FireworkScheduler scheduler, Map<String, Object> section) {
         super.load(scheduler, section);
-        this.count = (int) section.getOrDefault("count", 1);
+        this.count = ((Number) section.getOrDefault("count", 1)).intValue();
         this.xRange = getDoubleInterval(section,"xOff");
         this.yRange = getDoubleInterval(section,"yOff");
         this.zRange = getDoubleInterval(section,"zOff");
