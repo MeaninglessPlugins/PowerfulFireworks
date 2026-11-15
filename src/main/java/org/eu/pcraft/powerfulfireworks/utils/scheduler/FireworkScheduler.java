@@ -140,8 +140,9 @@ public class FireworkScheduler {
                     .parallelStream()
                     .map(FireworkScheduler::color)
                     .collect(Collectors.toList())); // load colors
-        if (section.containsKey("fade"))
-            builder.withFade(((List<String>) section.get("fades"))
+        Object fade = section.containsKey("fade") ? section.get("fade") : section.get("fades");
+        if (fade != null)
+            builder.withFade(((List<String>) fade)
                     .parallelStream()
                     .map(FireworkScheduler::color)
                     .collect(Collectors.toList()));

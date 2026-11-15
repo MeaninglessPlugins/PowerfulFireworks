@@ -1,0 +1,182 @@
+# 演出与节点（fireworks/*.yml）
+
+`plugins/PowerfulFireworks/fireworks/` 下的每个 `.yml` / `.yaml` 会编译成一场演出，文件名随意，演出 id 由文件里的 `id` 决定。`/fireworks reload` 会重新编译全部文件；某份文件编译失败只会在日志里留一条 `Failed compiling firework from ...`，不影响其它演出。
+
+## 骨架
+
+```yaml
+id: newyear
+allowActivationByItems: true
+
+presets:
+  red:
+    effects:
+      - type: BALL
+        colors: ["#FF0000"]
+        fade: ["#FFAA00"]
+        flicker: false
+        trail: true
+
+nodes:
+  - type: original
+    count: 3
+    flyTime: 40
+    xOff: [-6, 6]
+    zOff: [-6, 6]
+  - type: wait
+    ticks: 80
+  - type: text
+    font: example
+    text: "HAPPY NEW YEAR"
+    size: 1.5
+    flyTime: 45
+```
+
+`id` 必填。`presets` 和 `nodes` 也必须存在，没有内容时写 `{}` 和 `[]`。
+
+| 键 | 默认 | 说明 |
+| --- | --- | --- |
+| `id` | 必填 | 演出 id，`/fireworks execute <id>` 用它，也是引用节点的 `target` |
+| `allowActivationByItems` | `false` | 是否允许用 `/fireworks item <id>` 拿到的道具触发 |
+| `presets` | 必填 | 预设烟花，见下 |
+| `nodes` | 必填 | 节点列表，按顺序执行 |
+
+## presets
+
+每个预设是一枚已经配好效果的烟花物品：
+
+```yaml
+presets:
+  big_red:
+    effects:
+      - type: BALL_LARGE
+        colors: ["#FF0000", "#FF4400"]
+        fade: ["#FFAA00"]
+        flicker: false
+        trail: true
+```
+
+一个预设可以写多个 `effects`，会叠在同一枚烟花上（原版一次爆炸的球体数量有限制，叠太多效果看不出差别）。
+
+| 键 | 默认 | 说明 |
+| --- | --- | --- |
+| `type` | `BALL` | `BALL` / `BALL_LARGE` / `STAR` / `BURST` / `CREEPER` |
+| `colors` | 无 | 颜色列表，`"#RRGGBB"` 或 `"0xRRGGBB"` |
+| `fade`（也接受 `fades`） | 无 | 爆炸后的渐变颜色列表，写法同上 |
+| `flicker` | `false` | 闪烁 |
+| `trail` | `false` | 拖尾 |
+
+## 节点
+
+节点按数组顺序执行，**每个节点占用一个 tick**（`wait` 节点除外）。整个演出用同一个起点和同一份玩家名单；每执行一个节点前会重新筛一遍观众，只有水平距离在服务端视距 × 16 以内的玩家才会收到包。
+
+### 通用字段（`original` / `text`）
+
+| 键 | 默认 | 说明 |
+| --- | --- | --- |
+| `flyTime` | `0` | 火箭升空多久后爆炸（tick），会被客户端 64 格渲染范围裁剪，见 [config 的升空时间](configuration.md#升空时间) |
+| `presets` | 无 | 从演出预设里随机取一个；不写就用随机生成的烟花 |
+| `launchChance` | `0.1` | 该节点下每支烟花发射声的播放概率 |
+| `explosionChance` | `0.2` | 该节点下每支烟花爆炸声的播放概率 |
+
+### original
+
+在起点附近放若干支普通烟花。
+
+| 键 | 默认 | 说明 |
+| --- | --- | --- |
+| `count` | `1` | 放几支 |
+| `xOff` | `0` | X 方向偏移，区间写法，每一支独立取值 |
+| `yOff` | `0` | Y 方向偏移 |
+| `zOff` | `0` | Z 方向偏移 |
+
+### text
+
+把文字渲染成点阵烟花。
+
+| 键 | 默认 | 说明 |
+| --- | --- | --- |
+| `font` | 必填 | `config.yml` 里 `fonts` 配置的字体 id |
+| `text` | 必填 | 要写的字，单行，不支持换行 |
+| `size` | `1.0` | 点与点之间的间距（格），1.0 大约 1 格一个点 |
+| `gap` | `1` | 相邻字符之间空几列像素 |
+| `rotate` | `false` | `true` 时让每个玩家都看到正对自己的文字 |
+| `face` | `EAST` | `rotate: false` 时的固定朝向，取 `BlockFace` 的名字（`NORTH` / `SOUTH` / `EAST` / `WEST`） |
+
+字符多的句子会生成很多支火箭，字越大、间隔越大占的格数也越多，注意别一次放飞几千支。
+
+### wait
+
+单纯等待，用来控制两段烟花之间的间隔。
+
+| 键 | 默认 | 说明 |
+| --- | --- | --- |
+| `ticks` | `1` | 等待多少 tick（20 tick = 1 秒） |
+
+### reference
+
+把别的演出按同样的起点和玩家名单再放一遍，用来复用桥段。
+
+| 键 | 默认 | 说明 |
+| --- | --- | --- |
+| `target` | 必填 | 另一份演出的 `id`，不能引用自己 |
+
+## 用道具触发
+
+给演出写上 `allowActivationByItems: true` 之后：
+
+1. `/fireworks item <id>` 拿到一枚带标记的烟花
+2. 玩家点燃它，火箭正常升空
+3. 火箭爆炸时插件取消这次原版爆炸，改在爆炸位置执行整场演出
+
+所以道具烟花本身只是一次"引信"，真正的效果由 `nodes` 决定，和其它玩家的视线无关。
+
+## 一个完整例子
+
+```yaml
+id: example
+allowActivationByItems: true
+
+presets:
+  red:
+    effects:
+      - type: BALL
+        colors: ["#FF0000"]
+        fade: ["#FFAA00"]
+        trail: true
+  blue:
+    effects:
+      - type: STAR
+        colors: ["#0088FF"]
+        flicker: true
+
+nodes:
+  - type: original
+    presets: [red]
+    count: 6
+    flyTime: 35
+    xOff: [-8, 8]
+    zOff: [-8, 8]
+    launchChance: 0.15
+    explosionChance: 0.4
+  - type: wait
+    ticks: 60
+  - type: text
+    font: example
+    text: "HELLO"
+    size: 1.2
+    gap: 2
+    flyTime: 40
+    launchChance: 0.05
+    explosionChance: 0.2
+  - type: wait
+    ticks: 80
+  - type: original
+    presets: [blue]
+    count: 4
+    flyTime: 30
+    yOff: [0, 6]
+    explosionChance: 0.5
+  - type: reference
+    target: other_show
+```
