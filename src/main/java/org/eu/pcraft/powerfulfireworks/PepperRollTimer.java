@@ -30,7 +30,8 @@ public abstract class PepperRollTimer {
         stop();
         if (!running) return;
         int delay = calculateDelay();
-        currentTask = Bukkit.getScheduler().runTaskLaterAsynchronously(
+        // 到点后的 run() 会读世界数据（玩家位置、最高方块）并发包，只能在主线程执行
+        currentTask = Bukkit.getScheduler().runTaskLater(
                 plugin,
                 this::internalRun,
                 delay

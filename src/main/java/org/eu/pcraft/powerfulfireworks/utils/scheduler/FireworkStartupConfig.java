@@ -28,8 +28,10 @@ public class FireworkStartupConfig {
     final List<Player> originalPlayers;
     public void updatePlayers() {
         players.clear();
+        long radius = (long) Bukkit.getViewDistance() * 16;
+        long maxSqrDistance = radius * radius;
         for(Player player : originalPlayers){
-            if(get2dSqrDistance(startupLocation, player.getLocation()) > (long) Bukkit.getViewDistance()*16 <<1){
+            if(get2dSqrDistance(startupLocation, player.getLocation()) > maxSqrDistance){
                 continue;
             }
             players.add(player);

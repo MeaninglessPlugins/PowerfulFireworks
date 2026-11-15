@@ -9,16 +9,36 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class LocationUtil {
+    /** 随机取点最多重试几次，全都落在未加载区块时退回起点。 */
+    private static final int RANDOM_LOCATION_ATTEMPTS = 8;
+
     public static Location getRandomLocation(Location location, int maxDistance) {
         final ThreadLocalRandom random = ThreadLocalRandom.current();
-        double u = random.nextDouble();
-        double theta = 2 * Math.PI * random.nextDouble();
-        double radius = maxDistance * Math.sqrt(u);
+        final World world = location.getWorld();
+        final double centerX = location.getX();
+        final double centerZ = location.getZ();
 
-        // 将极坐标转换为笛卡尔坐标
-        location.setX(location.x() + radius * Math.cos(theta));
-        location.setZ(location.z() + radius * Math.sin(theta));
-        location.setY(location.getWorld().getHighestBlockYAt(location) + 1);
+        for (int attempt = 0; attempt < RANDOM_LOCATION_ATTEMPTS; attempt++) {
+            double u = random.nextDouble();
+            double theta = 2 * Math.PI * random.nextDouble();
+            double radius = maxDistance * Math.sqrt(u);
+
+            // 将极坐标转换为笛卡尔坐标
+            double x = centerX + radius * Math.cos(theta);
+            double z = centerZ + radius * Math.sin(theta);
+
+            // 只往已加载的区块里放：未加载时读高度会触发区块加载，主线程上会卡服
+            if (!world.isChunkLoaded(Location.locToBlock(x) >> 4, Location.locToBlock(z) >> 4))
+                continue;
+
+            location.setX(x);
+            location.setZ(z);
+            location.setY(world.getHighestBlockYAt(location) + 1);
+            return location;
+        }
+
+        // 兜底：退回起点，玩家所在的区块一定是加载的
+        location.setY(world.getHighestBlockYAt(location) + 1);
         return location;
     }
 
@@ -84,14 +104,14 @@ public final class LocationUtil {
     }
 
     /**
-    * Get sqrDistance between the two location
+    * Get squared horizontal distance between the two locations
     * @param from the first location
     * @param to the second location
-    * @return distance
+    * @return dx*dx + dz*dz
     */
     public static long get2dSqrDistance(Location from, Location to){
-        long gapX = (long)(to.getX()-from.getX())<<1;
-        long gapZ = (long)(to.getZ()-from.getZ())<<1;
-        return gapX + gapZ;
+        double dx = to.getX() - from.getX();
+        double dz = to.getZ() - from.getZ();
+        return (long) (dx * dx + dz * dz);
     }
 }
