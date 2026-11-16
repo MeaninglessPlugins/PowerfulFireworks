@@ -110,8 +110,83 @@ public final class SchedulerValidator {
             reporter.add(source, issues);
         }
 
+        // 先摘掉成环的演出，再校验引用：这样引用到环上的文件也会一并报出来
+        validateCycles(schedulers, owners, reporter);
         validateReferences(schedulers, owners, reporter);
         return schedulers;
+    }
+
+    /**
+     * 跨文件：引用不能成环。
+     *
+     * <p>成环的一组演出会整组从结果里摘掉——它们在运行期会同步递归到栈溢出，不是"多放几支烟花"
+     * 的问题。环按规范形式去重，一条环只报一次。</p>
+     */
+    private static void validateCycles(Map<String, FireworkScheduler> schedulers,
+                                       Map<String, String> owners,
+                                       DiagnosticReporter reporter) {
+        Map<String, Integer> state = new HashMap<>(); // 1 = 在栈上，2 = 已完成
+        List<String> path = new ArrayList<>();
+        Set<String> reported = new LinkedHashSet<>();
+        Set<String> invalid = new LinkedHashSet<>();
+
+        for (String id : schedulers.keySet()) {
+            if (state.getOrDefault(id, 0) == 0) {
+                walkReferences(id, schedulers, state, path, reported, invalid, owners, reporter);
+            }
+        }
+
+        invalid.forEach(schedulers::remove);
+    }
+
+    private static void walkReferences(String id, Map<String, FireworkScheduler> schedulers,
+                                       Map<String, Integer> state, List<String> path,
+                                       Set<String> reported, Set<String> invalid,
+                                       Map<String, String> owners, DiagnosticReporter reporter) {
+        state.put(id, 1);
+        path.add(id);
+
+        FireworkScheduler scheduler = schedulers.get(id);
+        if (scheduler != null) {
+            for (String target : scheduler.getReferenceTargets()) {
+                if (!schedulers.containsKey(target)) {
+                    continue; // 目标不存在由 validateReferences 负责
+                }
+                int targetState = state.getOrDefault(target, 0);
+                if (targetState == 1) {
+                    List<String> cycle = new ArrayList<>(path.subList(path.indexOf(target), path.size()));
+                    if (reported.add(canonicalCycle(cycle))) {
+                        List<String> shown = new ArrayList<>(cycle);
+                        shown.add(target);
+                        reporter.add("fireworks/" + owners.get(id), List.of(new ConfigIssue(
+                                IssueLevel.ERROR, "id",
+                                "循环引用：" + String.join(" -> ", shown) + "，这些演出已全部跳过",
+                                "删掉其中任意一条 reference 节点")));
+                        invalid.addAll(cycle);
+                    }
+                } else if (targetState == 0) {
+                    walkReferences(target, schedulers, state, path, reported, invalid, owners, reporter);
+                }
+            }
+        }
+
+        path.remove(path.size() - 1);
+        state.put(id, 2);
+    }
+
+    /** 环的规范形式：从最小 id 开始，保证同一个环只报一次。 */
+    private static String canonicalCycle(List<String> cycle) {
+        int smallest = 0;
+        for (int i = 1; i < cycle.size(); i++) {
+            if (cycle.get(i).compareTo(cycle.get(smallest)) < 0) {
+                smallest = i;
+            }
+        }
+        List<String> rotated = new ArrayList<>(cycle.size());
+        for (int i = 0; i < cycle.size(); i++) {
+            rotated.add(cycle.get((smallest + i) % cycle.size()));
+        }
+        return String.join(" -> ", rotated);
     }
 
     /** 跨文件：引用目标必须存在于本次加载的演出里。 */
