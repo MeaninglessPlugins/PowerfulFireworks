@@ -70,10 +70,7 @@ public class FireworkScheduler {
         if (Bukkit.isPrimaryThread()) {
             this.runPending(config, state, onComplete);
         } else {
-            config.plugin.nextTick(() -> {
-                config.nodeBudget = new NodeBudget();
-                this.runPending(config, state, onComplete);
-            });
+            config.plugin.nextTick(() -> this.runPending(config, state, onComplete));
         }
     }
 
@@ -111,18 +108,14 @@ public class FireworkScheduler {
                 logger.info("({}) executing node {}", this.id, node);
 
             if (node instanceof WaitFireworkNode wait) { // 唯一的让出点
-                config.nodeBudget = new NodeBudget();
                 plugin.runAfter(wait.ticks, () -> this.runPending(config, state, onComplete));
                 return;
             }
             if (node instanceof ReferenceFireworkNode ref && ref.isBlocking()) {
                 // 阻塞引用：对方跑完后直接接着走，不再多等一 tick
                 try {
-                    ref.executeBlocking(config, () -> {
-                        // 对方可能跨了好几个 tick 才跑完，续跑时按新的一 tick 重新计数
-                        config.nodeBudget = new NodeBudget();
-                        this.runPending(config, state, onComplete);
-                    });
+                    // 续跑时沿用同一份预算，跨 tick 的情况由 NodeBudget 自己判断
+                    ref.executeBlocking(config, () -> this.runPending(config, state, onComplete));
                 } catch (Throwable t) {
                     logger.warn("Blocking node {} of scheduler {} failed", node, this.id, t);
                 }
@@ -137,21 +130,29 @@ public class FireworkScheduler {
             }
         }
 
-        // 预算用完，下一个 tick 接着跑
-        config.nodeBudget = new NodeBudget();
+        // 预算用完，下一个 tick 接着跑；预算对象跨 tick 会自动重置
         plugin.nextTick(() -> this.runPending(config, state, onComplete));
     }
 
     /**
      * 一场演出在一个 tick 里还能跑多少个节点。
      *
-     * <p>引用型节点共享父演出的这一份预算，所以"单 tick 最多 64 个节点"对整条引用链成立，
-     * 而不是每个演出各算各的。</p>
+     * <p>引用型节点共享父演出的这一份预算，按 {@link Bukkit#getCurrentTick() 服务端 tick} 自动重置，
+     * 所以"单 tick 最多 64 个节点"对整条引用链成立，而不是每个演出、每一跳各算各的。</p>
      */
     public static final class NodeBudget {
         private int remaining = NODES_PER_TICK;
+        private int tick = -1;
 
+        /**
+         * 取一个节点额度。跨 tick 时自动重置，所以不需要在续跑的地方手动换新预算。
+         */
         boolean consume() {
+            int now = Bukkit.getCurrentTick();
+            if (now != this.tick) {
+                this.tick = now;
+                this.remaining = NODES_PER_TICK;
+            }
             if (this.remaining <= 0) {
                 return false;
             }

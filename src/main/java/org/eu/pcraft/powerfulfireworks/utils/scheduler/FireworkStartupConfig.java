@@ -20,7 +20,11 @@ public class FireworkStartupConfig {
         startupLocation = location;
         originalPlayers = playerList;
     }
-    /** 本场演出这一 tick 还剩多少节点额度，引用型节点共享同一份。 */
+    /**
+     * 本场演出这一 tick 还剩多少节点额度，引用型节点共享同一份。
+     *
+     * <p>跟随一次 {@code execute} 的生命周期，不能跨场复用——它记录着自己属于哪个 tick。</p>
+     */
     FireworkScheduler.NodeBudget nodeBudget;
 
     final PowerfulFireworks plugin = PowerfulFireworks.getInstance();
