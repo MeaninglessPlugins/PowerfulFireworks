@@ -22,6 +22,11 @@ public class BitmapFont {
     private final Map<Character, CharBitmap> characters;
     private final int charHeight;
 
+    /** 已解析的字符数，用来判断文件是不是空的。 */
+    public int getGlyphCount() {
+        return characters.size();
+    }
+
     public CharBitmap getCharacter(char character) {
 //        System.out.println(Arrays.toString(characters.get(character).ch));
         return characters.getOrDefault(character, new CharBitmap(charHeight));

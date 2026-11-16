@@ -124,3 +124,4 @@ run/
 !gradle-wrapper.jar
 
 *.bdf
+!src/main/resources/fonts/*.bdf

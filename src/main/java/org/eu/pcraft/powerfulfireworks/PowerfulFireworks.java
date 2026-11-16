@@ -29,6 +29,8 @@ import org.eu.pcraft.powerfulfireworks.utils.FontLoader;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkScheduler;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.SchedulerValidator;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
@@ -216,7 +218,8 @@ public final class PowerfulFireworks extends JavaPlugin {
 
             Set<String> brokenFonts = new HashSet<>();
             Map<String, BitmapFont> fonts =
-                    FontLoader.load(dataPath, main.fonts, getSLF4JLogger(), reporter, dryRun, brokenFonts);
+                    FontLoader.load(dataPath, main.fonts, getSLF4JLogger(), reporter, dryRun, brokenFonts,
+                            this::readBundledFont);
             FontLoader.checkTextFont(main, fonts, brokenFonts, reporter);
 
             Map<String, FireworkScheduler> schedulers =
@@ -235,6 +238,15 @@ public final class PowerfulFireworks extends JavaPlugin {
             // 捕获异常
             this.getSLF4JLogger().error("Critical error loading configurations", e);
             throw new RuntimeException("Failed to load plugin configurations", e);
+        }
+    }
+
+    /** 读 jar 里自带的字体文件，供首次运行时释放到插件目录。 */
+    private byte[] readBundledFont(String fileName) {
+        try (InputStream in = getResource("fonts/" + fileName)) {
+            return in == null ? null : in.readAllBytes();
+        } catch (IOException e) {
+            return null;
         }
     }
 

@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * 字体装载与文本烟花字体的校验。
@@ -35,6 +36,16 @@ public final class FontLoader {
     public static Map<String, BitmapFont> load(Path dataPath, Map<String, String> configured, Logger logger,
                                                DiagnosticReporter reporter, boolean dryRun,
                                                Set<String> brokenFonts) {
+        return load(dataPath, configured, logger, reporter, dryRun, brokenFonts, null);
+    }
+
+    /**
+     * @param bundled 插件自带字体的读取器（按文件名取字节，没有则返回 {@code null}）；
+     *                配置里写了文件名、数据目录里却没有时，会先把它释放出来再用
+     */
+    public static Map<String, BitmapFont> load(Path dataPath, Map<String, String> configured, Logger logger,
+                                               DiagnosticReporter reporter, boolean dryRun,
+                                               Set<String> brokenFonts, Function<String, byte[]> bundled) {
         Path folder = dataPath.resolve("fonts");
         Map<String, BitmapFont> loaded = new HashMap<>();
 
@@ -50,19 +61,23 @@ public final class FontLoader {
         }
 
         for (Map.Entry<String, String> entry : configured.entrySet()) {
-            loadSingle(folder, entry.getKey(), entry.getValue(), loaded, logger, reporter, dryRun, brokenFonts);
+            loadSingle(folder, entry.getKey(), entry.getValue(), loaded, logger, reporter, dryRun, brokenFonts, bundled);
         }
         return loaded;
     }
 
     private static void loadSingle(Path folder, String fontId, String fileName, Map<String, BitmapFont> loaded,
                                    Logger logger, DiagnosticReporter reporter, boolean dryRun,
-                                   Set<String> brokenFonts) {
+                                   Set<String> brokenFonts, Function<String, byte[]> bundled) {
         Path path = folder.resolve(fileName);
         try {
-            if (Files.isRegularFile(path)) {
-                String bdfContent = Files.readString(path, StandardCharsets.UTF_8);
-                loaded.put(fontId.toLowerCase(Locale.ROOT), BitmapFont.parseBDF(bdfContent));
+            byte[] data = Files.isRegularFile(path) ? Files.readAllBytes(path) : extractBundled(path, fileName, bundled, dryRun, logger);
+            if (data != null) {
+                BitmapFont font = BitmapFont.parseBDF(new String(data, StandardCharsets.UTF_8));
+                if (font.getGlyphCount() == 0) {
+                    throw new IllegalArgumentException("文件里没有任何字符");
+                }
+                loaded.put(fontId.toLowerCase(Locale.ROOT), font);
                 if (!dryRun) {
                     logger.info("Loaded font {} from {}", fontId, path);
                 }
@@ -78,6 +93,28 @@ public final class FontLoader {
                     "字体文件 " + fileName + " 解析失败，文本烟花会退回普通烟花：" + t.getMessage(),
                     "确认是 BDF 格式")));
         }
+    }
+
+    private static byte[] extractBundled(Path path, String fileName, Function<String, byte[]> bundled,
+                                         boolean dryRun, Logger logger) {
+        if (bundled == null) {
+            return null;
+        }
+        byte[] data = bundled.apply(fileName);
+        if (data == null) {
+            return null;
+        }
+        if (!dryRun) {
+            try {
+                Files.createDirectories(path.getParent());
+                Files.write(path, data);
+                logger.info("Extracted bundled font {} to {}", fileName, path);
+            } catch (IOException e) {
+                logger.warn("Unable to extract bundled font {} to {}", fileName, path);
+                return null;
+            }
+        }
+        return data;
     }
 
     /**
