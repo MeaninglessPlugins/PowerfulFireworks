@@ -61,6 +61,13 @@ public final class DiagnosticReporter {
         }
     }
 
+    /** 已收集的全部问题，按来源与加入顺序排列。 */
+    public List<ConfigIssue> all() {
+        List<ConfigIssue> result = new ArrayList<>();
+        this.sources.values().forEach(result::addAll);
+        return result;
+    }
+
     public int errors() {
         return count(IssueLevel.ERROR);
     }

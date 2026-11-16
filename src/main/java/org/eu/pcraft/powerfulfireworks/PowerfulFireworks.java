@@ -22,17 +22,14 @@ import org.eu.pcraft.powerfulfireworks.config.PepperConfigModule;
 import org.eu.pcraft.powerfulfireworks.config.ValidationRules;
 import org.eu.pcraft.powerfulfireworks.hook.FireworkItemListener;
 import org.eu.pcraft.powerfulfireworks.hook.VaultHook;
-import org.eu.pcraft.powerfulfireworks.libs.config.ConfigIssue;
-import org.eu.pcraft.powerfulfireworks.libs.config.IssueLevel;
 import org.eu.pcraft.powerfulfireworks.nms.NMSSelector;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSProvider;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
+import org.eu.pcraft.powerfulfireworks.utils.FontLoader;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkScheduler;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.SchedulerValidator;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -217,8 +214,10 @@ public final class PowerfulFireworks extends JavaPlugin {
                 setupLocalizations();
             }
 
-            Map<String, BitmapFont> fonts = loadFonts(dataPath, main, reporter, dryRun);
-            checkTextFont(main, fonts, reporter);
+            Set<String> brokenFonts = new HashSet<>();
+            Map<String, BitmapFont> fonts =
+                    FontLoader.load(dataPath, main.fonts, getSLF4JLogger(), reporter, dryRun, brokenFonts);
+            FontLoader.checkTextFont(main, fonts, brokenFonts, reporter);
 
             Map<String, FireworkScheduler> schedulers =
                     SchedulerValidator.load(dataPath.resolve("fireworks"), fonts.keySet(), reporter);
@@ -254,63 +253,6 @@ public final class PowerfulFireworks extends JavaPlugin {
             this.context.setMessageLinePrefix(prefixComponent);
         } catch (Throwable t) {
             throw new RuntimeException("Unable to load messages/localizations", t);
-        }
-    }
-
-    private Map<String, BitmapFont> loadFonts(Path dataPath, PepperConfigModule config,
-                                              DiagnosticReporter reporter, boolean dryRun) {
-        Path folder = dataPath.resolve("fonts");
-        Map<String, BitmapFont> loaded = new HashMap<>();
-
-        if (!Files.exists(folder)) {
-            if (dryRun) {
-                return loaded;
-            }
-            try {
-                Files.createDirectories(folder);
-            } catch (IOException e) {
-                throw new RuntimeException("Unable to initialize fonts directory", e);
-            }
-        }
-
-        for (Map.Entry<String, String> entry : config.fonts.entrySet()) {
-            loadSingleFont(folder, entry.getKey(), entry.getValue(), loaded, reporter, dryRun);
-        }
-        return loaded;
-    }
-
-    private void loadSingleFont(Path folder, String fontId, String fileName,
-                                Map<String, BitmapFont> loaded, DiagnosticReporter reporter, boolean dryRun) {
-        Path path = folder.resolve(fileName);
-        try {
-            if (Files.isRegularFile(path)) {
-                String bdfContent = Files.readString(path, StandardCharsets.UTF_8);
-                loaded.put(fontId.toLowerCase(Locale.ROOT), BitmapFont.parseBDF(bdfContent));
-                if (!dryRun) {
-                    this.getSLF4JLogger().info("Loaded font {} from {}", fontId, path);
-                }
-            } else {
-                reporter.add("fonts", List.of(new ConfigIssue(IssueLevel.ERROR, fontId,
-                        "字体文件 " + fileName + " 不存在，使用该字体的演出无法加载",
-                        "把文件放进 fonts 文件夹")));
-            }
-        } catch (Throwable t) {
-            reporter.add("fonts", List.of(new ConfigIssue(IssueLevel.ERROR, fontId,
-                    "字体文件 " + fileName + " 解析失败：" + t.getMessage(), "确认是 BDF 格式")));
-        }
-    }
-
-    /** 文本烟花引用的字体必须在 fonts 段里且成功加载，否则运行时只会静默退回普通烟花。 */
-    private void checkTextFont(PepperConfigModule config, Map<String, BitmapFont> fonts, DiagnosticReporter reporter) {
-        PepperConfigModule.RandomFirework random = config.randomFirework;
-        if (random == null || random.text == null || !random.enabled || !random.text.enabled) {
-            return;
-        }
-        String font = random.text.font;
-        if (font != null && !fonts.containsKey(font.toLowerCase(Locale.ROOT))) {
-            reporter.add("config.yml", List.of(new ConfigIssue(IssueLevel.ERROR, "randomFirework.text.font",
-                    "字体 \"" + font + "\" 没有成功加载，文本烟花会退回普通烟花",
-                    "检查 fonts 段与该文件是否存在")));
         }
     }
 
