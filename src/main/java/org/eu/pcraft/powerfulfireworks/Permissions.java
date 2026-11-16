@@ -11,6 +11,7 @@ public class Permissions {
     public static final Permission CMD_FIREWORKS_FONT = new Permission(named("cmd", "fireworks", "font"));
     public static final Permission CMD_FIREWORKS_EXECUTE = new Permission(named("cmd", "fireworks", "execute"));
     public static final Permission CMD_FIREWORKS_RELOAD = new Permission(named("cmd", "fireworks", "reload"));
+    public static final Permission CMD_FIREWORKS_CHECK = new Permission(named("cmd", "fireworks", "check"));
     public static final Permission CMD_TEST = new Permission(named("cmd", "test"));
     public static final Permission CMD_FIREWORKS_TOGGLE = new Permission(named("cmd", "fireworks", "toggle"));
     public static final Permission CMD_FIREWORKS_ITEM = new Permission(named("cmd", "fireworks", "item"));
@@ -21,6 +22,7 @@ public class Permissions {
         CMD_FIREWORKS_FONT.addParent(CMD_FIREWORKS, true);
         CMD_FIREWORKS_EXECUTE.addParent(CMD_FIREWORKS, true);
         CMD_FIREWORKS_RELOAD.addParent(CMD_FIREWORKS, true);
+        CMD_FIREWORKS_CHECK.addParent(CMD_FIREWORKS, true);
         CMD_FIREWORKS_TOGGLE.addParent(CMD_FIREWORKS, true);
         CMD_FIREWORKS_ITEM.addParent(CMD_FIREWORKS, true);
         CMD_TEST.addParent(CMD, true);

@@ -57,6 +57,7 @@ plugins/PowerfulFireworks/
 | `/fireworks item <演出>` | 拿一枚右键燃放该演出的烟花道具 |
 | `/fireworks toggle` | 开关自己的随机烟花 |
 | `/fireworks reload` | 重载配置与演出 |
+| `/fireworks check` | 只校验配置，不重载也不写文件 |
 | `/firework-test` | 用手上的烟花试放一个假烟花实体（调试用） |
 
 ## 权限
@@ -71,6 +72,7 @@ plugins/PowerfulFireworks/
 | `powerfulfireworks.cmd.fireworks.item` | `/fireworks item` |
 | `powerfulfireworks.cmd.fireworks.toggle` | `/fireworks toggle` |
 | `powerfulfireworks.cmd.fireworks.reload` | `/fireworks reload` |
+| `powerfulfireworks.cmd.fireworks.check` | `/fireworks check` |
 | `powerfulfireworks.cmd.test` | `/firework-test` |
 
 ## 文档

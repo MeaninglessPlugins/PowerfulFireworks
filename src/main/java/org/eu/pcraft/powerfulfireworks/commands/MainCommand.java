@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.eu.pcraft.powerfulfireworks.Permissions;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
+import org.eu.pcraft.powerfulfireworks.config.DiagnosticReporter;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkScheduler;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkStartupConfig;
@@ -57,6 +58,7 @@ public class MainCommand extends Command {
                 case "font" -> this.font(sender, args);
                 case "execute" -> this.execute(sender, args);
                 case "reload" -> this.reload(sender);
+                case "check" -> this.check(sender);
                 case "toggle" -> this.toggle(sender);
                 case "item" -> this.item(sender, args);
                 default -> this.help(sender);
@@ -91,6 +93,8 @@ public class MainCommand extends Command {
                 .line().text("help - ").localize("commands.fireworks.help.help");
         if (sender.hasPermission(Permissions.CMD_FIREWORKS_RELOAD))
             mb.line().text("reload - ").localize("commands.fireworks.help.reload");
+        if (sender.hasPermission(Permissions.CMD_FIREWORKS_CHECK))
+            mb.line().text("check - ").localize("commands.fireworks.help.check");
         if (sender.hasPermission(Permissions.CMD_FIREWORKS_EXECUTE))
             mb.line().text("execute - ").localize("commands.fireworks.help.execute");
         if (sender.hasPermission(Permissions.CMD_FIREWORKS_FONT))
@@ -201,6 +205,27 @@ public class MainCommand extends Command {
         mb.send();
     }
 
+    /** 只校验、不重载：不改文件、不替换运行时状态，详细诊断输出到控制台。 */
+    private void check(CommandSender sender) {
+        MessageBuilder mb = this.ctx.message(sender);
+        if (!sender.hasPermission(Permissions.CMD_FIREWORKS_CHECK)) {
+            mb.localize("commands.no-permission");
+        } else {
+            try {
+                DiagnosticReporter report = PowerfulFireworks.getInstance().checkConfigurations();
+                if (report.errors() == 0 && report.warnings() == 0) {
+                    mb.localize("commands.fireworks.check.ok");
+                } else {
+                    mb.localize("commands.fireworks.check.summary",
+                            String.valueOf(report.errors()), String.valueOf(report.warnings()));
+                }
+            } catch (Throwable t) {
+                mb.localize("commands.fireworks.reload.failed");
+            }
+        }
+        mb.send();
+    }
+
     private void item(CommandSender sender, String[] args) {
         if (sender instanceof Player player) {
             if (args.length == 2) {
@@ -228,7 +253,7 @@ public class MainCommand extends Command {
     public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
         TabBuilder builder = new TabBuilder();
         if (args.length == 1) {
-            builder.add(args[0], "help", "execute", "reload", "font", "toggle");
+            builder.add(args[0], "help", "execute", "reload", "font", "toggle", "check");
         } else if (args.length == 2) {
             String a0 = args[0].toLowerCase(Locale.ROOT);
             String a1 = args[1];

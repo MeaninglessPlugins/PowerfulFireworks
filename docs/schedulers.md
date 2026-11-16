@@ -41,6 +41,15 @@ nodes:
 | `presets` | 必填 | 预设烟花，见下 |
 | `nodes` | 必填 | 节点列表，按顺序执行 |
 
+## 校验
+
+每份演出在加载时都会被检查一遍，规则和 `config.yml` 一样分 `ERROR` / `WARN` 两档（见 [配置校验](configuration.md#配置校验)）。这里只列演出侧特有的：
+
+- `ERROR`：节点类型写错、`presets` / `nodes` 缺失、`id` 与别的文件重复（后一份会被跳过）、引用了不存在的演出或预设、字体没有加载、`face` 写成 `UP` / `DOWN`、数量或点阵间距小于等于 0；
+- `WARN`：节点里写了不认识的键（拼错时最常见）、`flyTime` 超过 56 tick、`count` 大于 50、`wait.ticks` 为 0 或负数以外的异常值。
+
+`/fireworks check` 可以只跑检查、不重载。
+
 ## presets
 
 每个预设是一枚已经配好效果的烟花物品：

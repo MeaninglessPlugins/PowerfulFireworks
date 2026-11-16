@@ -59,6 +59,19 @@ public class MessagesConfigModule {
 
             @ConfigPath("item")
             String item = "获取物品烟花";
+
+            @ConfigPath("check")
+            String check = "校验配置文件（只读，不会重载）";
+        }
+
+        @ConfigModel
+        public static class CheckCommand {
+
+            @ConfigPath("ok")
+            String ok = "<green>配置校验通过，没有发现问题</green>";
+
+            @ConfigPath("summary")
+            String summary = "<yellow>配置校验完成：%s 个错误，%s 个警告，详见控制台</yellow>";
         }
 
         @ConfigModel
@@ -134,6 +147,9 @@ public class MessagesConfigModule {
 
             @ConfigPath("reload")
             ReloadCommand reload = new ReloadCommand();
+
+            @ConfigPath("check")
+            CheckCommand check = new CheckCommand();
 
             @ConfigPath("toggle")
             ToggleCommand toggle = new ToggleCommand();

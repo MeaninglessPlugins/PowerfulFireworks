@@ -9,7 +9,6 @@ import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandMap;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -17,21 +16,25 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.eu.pcraft.powerfulfireworks.commands.MainCommand;
 import org.eu.pcraft.powerfulfireworks.commands.TestCommand;
 import org.eu.pcraft.powerfulfireworks.config.ConfigManager;
+import org.eu.pcraft.powerfulfireworks.config.DiagnosticReporter;
 import org.eu.pcraft.powerfulfireworks.config.MessagesConfigModule;
 import org.eu.pcraft.powerfulfireworks.config.PepperConfigModule;
+import org.eu.pcraft.powerfulfireworks.config.ValidationRules;
 import org.eu.pcraft.powerfulfireworks.hook.FireworkItemListener;
 import org.eu.pcraft.powerfulfireworks.hook.VaultHook;
+import org.eu.pcraft.powerfulfireworks.libs.config.ConfigIssue;
+import org.eu.pcraft.powerfulfireworks.libs.config.IssueLevel;
 import org.eu.pcraft.powerfulfireworks.nms.NMSSelector;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSProvider;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkScheduler;
+import org.eu.pcraft.powerfulfireworks.utils.scheduler.SchedulerValidator;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Stream;
 
 public final class PowerfulFireworks extends JavaPlugin {
 
@@ -173,39 +176,67 @@ public final class PowerfulFireworks extends JavaPlugin {
     }
 
     public void loadConfigurations() {
-        Path dataPath = getDataFolder().toPath();
+        loadAll(getDataFolder().toPath(), false);
+    }
+
+    /**
+     * 只读校验：不写回配置文件，也不替换运行时的字体与演出。
+     *
+     * @return 本次校验的诊断，调用方可以直接读错误与警告数量
+     */
+    public DiagnosticReporter checkConfigurations() {
+        return loadAll(getDataFolder().toPath(), true);
+    }
+
+    /**
+     * 装载并校验全部配置。
+     *
+     * @param dryRun 为 true 时不落盘、不替换运行时状态，只产出诊断
+     */
+    private DiagnosticReporter loadAll(Path dataPath, boolean dryRun) {
+        DiagnosticReporter reporter = new DiagnosticReporter(getSLF4JLogger(), false);
 
         try {
-            // 配置加载
-            loadBaseConfigs(dataPath);
+            ConfigManager<PepperConfigModule> configManager = new ConfigManager<>(
+                    dataPath.resolve("config.yml"), PepperConfigModule.class, getSLF4JLogger(),
+                    reporter, ValidationRules::validate);
+            configManager.loadConfig(!dryRun);
+            PepperConfigModule main = configManager.getConfigModule();
+            reporter.setVerbose(main.debug);
 
-            // 本地化
-            setupLocalizations();
+            ConfigManager<MessagesConfigModule> messagesManager = new ConfigManager<>(
+                    dataPath.resolve("messages.yml"), MessagesConfigModule.class, getSLF4JLogger(), reporter);
+            messagesManager.loadConfig(!dryRun);
 
-            // 资源加载
-            loadFonts(dataPath);
-            loadFireworks(dataPath);
+            if (!dryRun) {
+                this.configManager = configManager;
+                this.messagesManager = messagesManager;
+                this.mainConfig = main;
+                this.messageConfig = messagesManager.getConfigModule();
+                // 本地化直接从磁盘读 messages.yml，只在正常装载时重建
+                setupLocalizations();
+            }
 
-            // 更新命令补全
-            updateCommandCompletions();
+            Map<String, BitmapFont> fonts = loadFonts(dataPath, main, reporter, dryRun);
+            checkTextFont(main, fonts, reporter);
 
+            Map<String, FireworkScheduler> schedulers =
+                    SchedulerValidator.load(dataPath.resolve("fireworks"), fonts.keySet(), reporter);
+
+            if (!dryRun) {
+                this.fonts = fonts;
+                this.schedulers = schedulers;
+                getSLF4JLogger().info("Loaded {} firework schedulers", schedulers.size());
+                updateCommandCompletions();
+            }
+
+            reporter.report();
+            return reporter;
         } catch (Exception e) {
             // 捕获异常
             this.getSLF4JLogger().error("Critical error loading configurations", e);
             throw new RuntimeException("Failed to load plugin configurations", e);
         }
-    }
-
-    private void loadBaseConfigs(Path dataPath) {
-        this.configManager = new ConfigManager<>(
-                dataPath.resolve("config.yml"), PepperConfigModule.class, getSLF4JLogger());
-        this.messagesManager = new ConfigManager<>(
-                dataPath.resolve("messages.yml"), MessagesConfigModule.class, getSLF4JLogger());
-
-        this.configManager.loadConfig();
-        this.messagesManager.loadConfig();
-
-        this.mainConfig = this.configManager.getConfigModule();
     }
 
     private void setupLocalizations() {
@@ -226,73 +257,60 @@ public final class PowerfulFireworks extends JavaPlugin {
         }
     }
 
-    private void loadFonts(Path dataPath) {
+    private Map<String, BitmapFont> loadFonts(Path dataPath, PepperConfigModule config,
+                                              DiagnosticReporter reporter, boolean dryRun) {
         Path folder = dataPath.resolve("fonts");
-        this.fonts = new HashMap<>();
+        Map<String, BitmapFont> loaded = new HashMap<>();
 
-        try {
-            if (!Files.exists(folder)) {
+        if (!Files.exists(folder)) {
+            if (dryRun) {
+                return loaded;
+            }
+            try {
                 Files.createDirectories(folder);
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to initialize fonts directory", e);
             }
-
-            Map<String, String> fontConfig = this.mainConfig.fonts;
-            for (Map.Entry<String, String> entry : fontConfig.entrySet()) {
-                String fontId = entry.getKey();
-                String fileName = entry.getValue();
-                loadSingleFont(folder, fontId, fileName);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to initialize fonts directory", e);
         }
+
+        for (Map.Entry<String, String> entry : config.fonts.entrySet()) {
+            loadSingleFont(folder, entry.getKey(), entry.getValue(), loaded, reporter, dryRun);
+        }
+        return loaded;
     }
 
-    private void loadSingleFont(Path folder, String fontId, String fileName) {
+    private void loadSingleFont(Path folder, String fontId, String fileName,
+                                Map<String, BitmapFont> loaded, DiagnosticReporter reporter, boolean dryRun) {
         Path path = folder.resolve(fileName);
         try {
             if (Files.isRegularFile(path)) {
                 String bdfContent = Files.readString(path, StandardCharsets.UTF_8);
-                this.fonts.put(fontId.toLowerCase(Locale.ROOT), BitmapFont.parseBDF(bdfContent));
-                this.getSLF4JLogger().info("Loaded font {} from {}", fontId, path);
+                loaded.put(fontId.toLowerCase(Locale.ROOT), BitmapFont.parseBDF(bdfContent));
+                if (!dryRun) {
+                    this.getSLF4JLogger().info("Loaded font {} from {}", fontId, path);
+                }
             } else {
-                this.getSLF4JLogger().warn("Invalid or missing font file {}: {}", fontId, fileName);
+                reporter.add("fonts", List.of(new ConfigIssue(IssueLevel.ERROR, fontId,
+                        "字体文件 " + fileName + " 不存在，使用该字体的演出无法加载",
+                        "把文件放进 fonts 文件夹")));
             }
         } catch (Throwable t) {
-            this.getSLF4JLogger().warn("Error loading font file {} for {}", fileName, fontId, t);
+            reporter.add("fonts", List.of(new ConfigIssue(IssueLevel.ERROR, fontId,
+                    "字体文件 " + fileName + " 解析失败：" + t.getMessage(), "确认是 BDF 格式")));
         }
     }
 
-    private void loadFireworks(Path dataPath) {
-        Path fwPath = dataPath.resolve("fireworks");
-        this.schedulers = new HashMap<>();
-
-        try {
-            if (!Files.exists(fwPath)) {
-                Files.createDirectories(fwPath);
-            }
-
-            try (Stream<Path> paths = Files.list(fwPath)) {
-                paths.filter(this::isYamlFile)
-                        .forEach(this::compileAndRegisterFirework);
-            }
-        } catch (Throwable t) {
-            throw new RuntimeException("Unable to load firework schedulers", t);
+    /** 文本烟花引用的字体必须在 fonts 段里且成功加载，否则运行时只会静默退回普通烟花。 */
+    private void checkTextFont(PepperConfigModule config, Map<String, BitmapFont> fonts, DiagnosticReporter reporter) {
+        PepperConfigModule.RandomFirework random = config.randomFirework;
+        if (random == null || random.text == null || !random.enabled || !random.text.enabled) {
+            return;
         }
-        this.getSLF4JLogger().info("Loaded {} firework schedulers", this.schedulers.size());
-    }
-
-    private boolean isYamlFile(Path path) {
-        String name = path.toString();
-        return Files.isRegularFile(path) && (name.endsWith(".yml") || name.endsWith(".yaml"));
-    }
-
-    private void compileAndRegisterFirework(Path path) {
-        try {
-            var yamlConfig = YamlConfiguration.loadConfiguration(Files.newBufferedReader(path));
-            FireworkScheduler compiled = FireworkScheduler.compile(yamlConfig);
-            this.schedulers.put(compiled.getId(), compiled);
-            this.getSLF4JLogger().info("Compiled {} from {}", compiled.getId(), path);
-        } catch (Throwable e) {
-            this.getSLF4JLogger().warn("Failed compiling firework from {}", path, e);
+        String font = random.text.font;
+        if (font != null && !fonts.containsKey(font.toLowerCase(Locale.ROOT))) {
+            reporter.add("config.yml", List.of(new ConfigIssue(IssueLevel.ERROR, "randomFirework.text.font",
+                    "字体 \"" + font + "\" 没有成功加载，文本烟花会退回普通烟花",
+                    "检查 fonts 段与该文件是否存在")));
         }
     }
 

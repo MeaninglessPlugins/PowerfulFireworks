@@ -123,6 +123,17 @@ public class FireworkScheduler {
         plugin.nextTick(() -> this.runPending(config, state, onComplete));
     }
 
+    /** 本演出引用到的其它演出 id，供装载期做跨文件校验。 */
+    public Set<String> getReferenceTargets() {
+        Set<String> targets = new HashSet<>();
+        for (CommonNode node : this.nodes) {
+            if (node instanceof ReferenceFireworkNode reference) {
+                targets.add(reference.getTarget());
+            }
+        }
+        return targets;
+    }
+
     @Override
     public String toString() {
         return "FireworkScheduler{id=" + this.id + ",presetsCount=" + this.presets.size() + ",nodes=" + this.nodes + "}";

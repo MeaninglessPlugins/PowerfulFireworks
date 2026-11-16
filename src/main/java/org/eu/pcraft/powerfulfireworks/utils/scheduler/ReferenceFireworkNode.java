@@ -22,6 +22,10 @@ public class ReferenceFireworkNode extends CommonNode {
         return this.blocking;
     }
 
+    public String getTarget() {
+        return this.target;
+    }
+
     @Override
     public void execute(FireworkStartupConfig config) {
         FireworkScheduler scheduler = config.plugin.getSchedulers().get(this.target);
