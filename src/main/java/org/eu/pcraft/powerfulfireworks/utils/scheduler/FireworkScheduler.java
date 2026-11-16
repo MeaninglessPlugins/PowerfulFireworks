@@ -45,8 +45,10 @@ public class FireworkScheduler {
         return this.presets.get(id);
     }
 
+    /** 顶层入口：开一场新演出，并重置本 tick 的节点预算。 */
     public void execute(FireworkStartupConfig config) {
-        execute(config, null);
+        config.nodeBudget = new NodeBudget();
+        start(config, null);
     }
 
     /**
@@ -55,13 +57,23 @@ public class FireworkScheduler {
      * @param onComplete 所有节点跑完后的回调，可为 null。阻塞引用靠它把控制权交还父演出。
      */
     public void execute(FireworkStartupConfig config, Runnable onComplete) {
-        config.scheduler = this;
+        // 被别的演出引用：沿用父演出这一 tick 剩余的节点预算，避免引用把单 tick 的量放大
+        if (config.nodeBudget == null) {
+            config.nodeBudget = new NodeBudget();
+        }
+        start(config, onComplete);
+    }
+
+    private void start(FireworkStartupConfig config, Runnable onComplete) {
         PowerfulFireworks.getInstance().getSLF4JLogger().info("Executing scheduler {}", id);
         AtomicInteger state = new AtomicInteger();
         if (Bukkit.isPrimaryThread()) {
             this.runPending(config, state, onComplete);
         } else {
-            config.plugin.nextTick(() -> this.runPending(config, state, onComplete));
+            config.plugin.nextTick(() -> {
+                config.nodeBudget = new NodeBudget();
+                this.runPending(config, state, onComplete);
+            });
         }
     }
 
@@ -85,8 +97,9 @@ public class FireworkScheduler {
         final PowerfulFireworks plugin = config.plugin;
         final Logger logger = plugin.getSLF4JLogger();
         config.updatePlayers();
+        NodeBudget budget = config.nodeBudget;
 
-        for (int budget = NODES_PER_TICK; budget > 0; budget--) {
+        while (budget.consume()) {
             int current = state.getAndIncrement();
             if (current >= this.nodes.size()) {
                 if (onComplete != null) onComplete.run();
@@ -98,13 +111,18 @@ public class FireworkScheduler {
                 logger.info("({}) executing node {}", this.id, node);
 
             if (node instanceof WaitFireworkNode wait) { // 唯一的让出点
+                config.nodeBudget = new NodeBudget();
                 plugin.runAfter(wait.ticks, () -> this.runPending(config, state, onComplete));
                 return;
             }
             if (node instanceof ReferenceFireworkNode ref && ref.isBlocking()) {
                 // 阻塞引用：对方跑完后直接接着走，不再多等一 tick
                 try {
-                    ref.executeBlocking(config, () -> this.runPending(config, state, onComplete));
+                    ref.executeBlocking(config, () -> {
+                        // 对方可能跨了好几个 tick 才跑完，续跑时按新的一 tick 重新计数
+                        config.nodeBudget = new NodeBudget();
+                        this.runPending(config, state, onComplete);
+                    });
                 } catch (Throwable t) {
                     logger.warn("Blocking node {} of scheduler {} failed", node, this.id, t);
                 }
@@ -120,7 +138,26 @@ public class FireworkScheduler {
         }
 
         // 预算用完，下一个 tick 接着跑
+        config.nodeBudget = new NodeBudget();
         plugin.nextTick(() -> this.runPending(config, state, onComplete));
+    }
+
+    /**
+     * 一场演出在一个 tick 里还能跑多少个节点。
+     *
+     * <p>引用型节点共享父演出的这一份预算，所以"单 tick 最多 64 个节点"对整条引用链成立，
+     * 而不是每个演出各算各的。</p>
+     */
+    public static final class NodeBudget {
+        private int remaining = NODES_PER_TICK;
+
+        boolean consume() {
+            if (this.remaining <= 0) {
+                return false;
+            }
+            this.remaining--;
+            return true;
+        }
     }
 
     /** 本演出引用到的其它演出 id，供装载期做跨文件校验。 */

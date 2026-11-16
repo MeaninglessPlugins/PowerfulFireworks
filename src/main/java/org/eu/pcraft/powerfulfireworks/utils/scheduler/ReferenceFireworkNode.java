@@ -32,7 +32,7 @@ public class ReferenceFireworkNode extends CommonNode {
         if (scheduler == null)
             config.plugin.getSLF4JLogger().warn("Unknown scheduler reference: {}", this.target);
         else
-            scheduler.execute(config);
+            scheduler.execute(config, null); // 与父演出共享本 tick 的节点预算
     }
 
     /**

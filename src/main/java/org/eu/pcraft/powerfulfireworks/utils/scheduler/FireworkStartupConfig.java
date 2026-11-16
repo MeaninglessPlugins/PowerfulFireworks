@@ -20,7 +20,8 @@ public class FireworkStartupConfig {
         startupLocation = location;
         originalPlayers = playerList;
     }
-    FireworkScheduler scheduler;
+    /** 本场演出这一 tick 还剩多少节点额度，引用型节点共享同一份。 */
+    FireworkScheduler.NodeBudget nodeBudget;
 
     final PowerfulFireworks plugin = PowerfulFireworks.getInstance();
 
