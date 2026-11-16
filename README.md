@@ -6,7 +6,7 @@ _~~充满力量的烟花（大雾~~_
 
 所有烟花都以数据包创建：服务端不生成实体，几百支烟花同时升空也不会拖慢 TPS。
 
-Wiki: https://jlxnb.github.io/PowerfulFireworkWiki/
+Wiki: https://nullpepper.github.io/PowerfulFireworkWiki/
 
 ## 特性
 
