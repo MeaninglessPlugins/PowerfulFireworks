@@ -3,6 +3,7 @@ package org.eu.pcraft.powerfulfireworks.utils.scheduler;
 import com.google.common.base.Verify;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
@@ -27,6 +28,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FireworkScheduler {
     private static final Map<String, MethodHandle> nodeCompilers = new HashMap<>();
+
+    /** 单个 tick 内最多连续执行多少个节点，防止超长演出把一 tick 拖住 */
+    private static final int NODES_PER_TICK = 64;
 
     @Getter
     @NotNull
@@ -53,7 +57,12 @@ public class FireworkScheduler {
     public void execute(FireworkStartupConfig config, Runnable onComplete) {
         config.scheduler = this;
         PowerfulFireworks.getInstance().getSLF4JLogger().info("Executing scheduler {}", id);
-        this.execute0(config, new AtomicInteger(), onComplete);
+        AtomicInteger state = new AtomicInteger();
+        if (Bukkit.isPrimaryThread()) {
+            this.runPending(config, state, onComplete);
+        } else {
+            config.plugin.nextTick(() -> this.runPending(config, state, onComplete));
+        }
     }
 
     public ItemStack createItem() {
@@ -66,41 +75,52 @@ public class FireworkScheduler {
         return item;
     }
 
-    private void execute0(FireworkStartupConfig config, AtomicInteger state, Runnable onComplete) {
+    /**
+     * 在当前 tick 里连续执行节点，直到需要等待（{@code wait} / 阻塞引用）、演出结束，或者用完
+     * 本 tick 的节点预算。
+     *
+     * <p>预算的作用是兜底：一场演出如果写了几百个即时节点，不至于把单个 tick 拖住。</p>
+     */
+    private void runPending(FireworkStartupConfig config, AtomicInteger state, Runnable onComplete) {
         final PowerfulFireworks plugin = config.plugin;
-        final Logger logger = config.plugin.getSLF4JLogger();
+        final Logger logger = plugin.getSLF4JLogger();
         config.updatePlayers();
-        plugin.nextTick(() -> {
+
+        for (int budget = NODES_PER_TICK; budget > 0; budget--) {
             int current = state.getAndIncrement();
-
-            if (current < this.nodes.size()) {
-                CommonNode node = this.nodes.get(current);
-
-                if (plugin.getMainConfig().debug)
-                    logger.info("({}) executing node {}", this.id, node);
-                if (node instanceof WaitFireworkNode wait) { // wait and next
-                    plugin.runAfter(wait.ticks, () -> this.execute0(config, state, onComplete));
-                } else if (node instanceof ReferenceFireworkNode ref && ref.isBlocking()) {
-                    // 阻塞引用：等被引用的演出整场跑完再继续下一个节点
-                    try {
-                        ref.executeBlocking(config, () -> this.execute0(config, state, onComplete));
-                    } catch (Throwable t) {
-                        logger.warn("Blocking node {} of scheduler {} failed", node, this.id, t);
-                        this.execute0(config, state, onComplete);
-                    }
-                } else {
-                    try {
-                        node.execute(config);   // execute now
-                    } catch (Throwable t) {
-                        // 单个节点出错就跳过它，别让整场演出停在这里
-                        logger.warn("Node {} of scheduler {} failed", node, this.id, t);
-                    }
-                    this.execute0(config, state, onComplete);    // schedule next
-                }
-            } else if (onComplete != null) {
-                onComplete.run();
+            if (current >= this.nodes.size()) {
+                if (onComplete != null) onComplete.run();
+                return;
             }
-        });
+
+            CommonNode node = this.nodes.get(current);
+            if (plugin.getMainConfig().debug)
+                logger.info("({}) executing node {}", this.id, node);
+
+            if (node instanceof WaitFireworkNode wait) { // 唯一的让出点
+                plugin.runAfter(wait.ticks, () -> this.runPending(config, state, onComplete));
+                return;
+            }
+            if (node instanceof ReferenceFireworkNode ref && ref.isBlocking()) {
+                // 阻塞引用：对方跑完后直接接着走，不再多等一 tick
+                try {
+                    ref.executeBlocking(config, () -> this.runPending(config, state, onComplete));
+                } catch (Throwable t) {
+                    logger.warn("Blocking node {} of scheduler {} failed", node, this.id, t);
+                }
+                return;
+            }
+
+            try {
+                node.execute(config);
+            } catch (Throwable t) {
+                // 单个节点出错就跳过它，别让整场演出停在这里
+                logger.warn("Node {} of scheduler {} failed", node, this.id, t);
+            }
+        }
+
+        // 预算用完，下一个 tick 接着跑
+        plugin.nextTick(() -> this.runPending(config, state, onComplete));
     }
 
     @Override
