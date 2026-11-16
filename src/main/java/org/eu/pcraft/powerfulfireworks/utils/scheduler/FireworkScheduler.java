@@ -42,9 +42,18 @@ public class FireworkScheduler {
     }
 
     public void execute(FireworkStartupConfig config) {
+        execute(config, null);
+    }
+
+    /**
+     * 执行整场演出。
+     *
+     * @param onComplete 所有节点跑完后的回调，可为 null。阻塞引用靠它把控制权交还父演出。
+     */
+    public void execute(FireworkStartupConfig config, Runnable onComplete) {
         config.scheduler = this;
         PowerfulFireworks.getInstance().getSLF4JLogger().info("Executing scheduler {}", id);
-        this.execute0(config, new AtomicInteger());
+        this.execute0(config, new AtomicInteger(), onComplete);
     }
 
     public ItemStack createItem() {
@@ -57,7 +66,7 @@ public class FireworkScheduler {
         return item;
     }
 
-    private void execute0(FireworkStartupConfig config, AtomicInteger state) {
+    private void execute0(FireworkStartupConfig config, AtomicInteger state, Runnable onComplete) {
         final PowerfulFireworks plugin = config.plugin;
         final Logger logger = config.plugin.getSLF4JLogger();
         config.updatePlayers();
@@ -70,7 +79,15 @@ public class FireworkScheduler {
                 if (plugin.getMainConfig().debug)
                     logger.info("({}) executing node {}", this.id, node);
                 if (node instanceof WaitFireworkNode wait) { // wait and next
-                    plugin.runAfter(wait.ticks, () -> this.execute0(config, state));
+                    plugin.runAfter(wait.ticks, () -> this.execute0(config, state, onComplete));
+                } else if (node instanceof ReferenceFireworkNode ref && ref.isBlocking()) {
+                    // 阻塞引用：等被引用的演出整场跑完再继续下一个节点
+                    try {
+                        ref.executeBlocking(config, () -> this.execute0(config, state, onComplete));
+                    } catch (Throwable t) {
+                        logger.warn("Blocking node {} of scheduler {} failed", node, this.id, t);
+                        this.execute0(config, state, onComplete);
+                    }
                 } else {
                     try {
                         node.execute(config);   // execute now
@@ -78,8 +95,10 @@ public class FireworkScheduler {
                         // 单个节点出错就跳过它，别让整场演出停在这里
                         logger.warn("Node {} of scheduler {} failed", node, this.id, t);
                     }
-                    this.execute0(config, state);    // schedule next
+                    this.execute0(config, state, onComplete);    // schedule next
                 }
+            } else if (onComplete != null) {
+                onComplete.run();
             }
         });
     }
