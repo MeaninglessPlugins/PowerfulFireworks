@@ -76,6 +76,7 @@ public final class ValidationRules {
         distance(issues, random, values);
         chance(issues, "randomFirework.launchChance", random.launchChance, "发射声");
         chance(issues, "randomFirework.explosionChance", random.explosionChance, "爆炸声");
+        velocity(issues, "randomFirework.velocity", random.velocity);
 
         PepperConfigModule.RandomFireworkText text = random.text;
         if (text == null || !random.enabled || !text.enabled) {
@@ -103,6 +104,7 @@ public final class ValidationRules {
         }
         chance(issues, "randomFirework.text.launchChance", text.launchChance, "文本烟花的发射声");
         chance(issues, "randomFirework.text.explosionChance", text.explosionChance, "文本烟花的爆炸声");
+        velocity(issues, "randomFirework.text.velocity", text.velocity);
     }
 
     private static void distance(IssueCollector issues, PepperConfigModule.RandomFirework random, ConfigValues values) {
@@ -136,6 +138,16 @@ public final class ValidationRules {
         if (value.minimum > value.maximum) {
             error(issues, path, what + "的最小值 " + value.minimum + " 大于最大值 " + value.maximum,
                     "改成 [最小值, 最大值]");
+        }
+    }
+
+    private static void velocity(IssueCollector issues, String path, double value) {
+        if (value < 0) {
+            warn(issues, path, "初速度 " + value + " 为负，火箭会先下沉再上升",
+                    "想要更慢的升空就把 flyTime 调小，或者保持 0");
+        } else if (value > 2) {
+            warn(issues, path, "初速度 " + value + " 格/tick 偏大，火箭会很快飞出 64 格的渲染范围",
+                    "一般 0 到 1 之间就够用");
         }
     }
 

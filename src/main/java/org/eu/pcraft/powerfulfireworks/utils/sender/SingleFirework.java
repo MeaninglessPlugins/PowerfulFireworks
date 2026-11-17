@@ -16,10 +16,17 @@ import java.util.List;
 
         private final double launchChance;
         private final double explosionChance;
+        /** 竖直初速度（格/tick） */
+        private final double velocity;
 
         public SingleFirework(double launchChance, double explosionChance) {
+            this(launchChance, explosionChance, 0.0);
+        }
+
+        public SingleFirework(double launchChance, double explosionChance, double velocity) {
             this.launchChance = launchChance;
             this.explosionChance = explosionChance;
+            this.velocity = velocity;
         }
 
         @Override
@@ -28,7 +35,7 @@ import java.util.List;
                     playerList,
                     stack,
                     fwLoc,
-                    launchChance);
+                    launchChance, 0.0, velocity, 0.0);
             BukkitRunnable fireworkExplosionTask = new BukkitRunnable() {
                 @Override
                 public void run() {
@@ -38,6 +45,6 @@ import java.util.List;
             };
             // 按客户端 64 格渲染范围裁剪飞行时间，避免火箭在引爆前被截断
             fireworkExplosionTask.runTaskLater(PowerfulFireworks.getInstance(),
-                    FlightUtil.clampFlyTime(flyTime, fwLoc, playerList));
+                    FlightUtil.clampFlyTime(flyTime, fwLoc, playerList, velocity));
         }
     }

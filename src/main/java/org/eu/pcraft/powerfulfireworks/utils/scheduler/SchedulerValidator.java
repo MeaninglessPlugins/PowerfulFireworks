@@ -37,7 +37,7 @@ public final class SchedulerValidator {
     private static final int MAX_COUNT = 50;
 
     private static final Set<String> COMMON_KEYS =
-            Set.of("type", "flyTime", "presets", "launchChance", "explosionChance");
+            Set.of("type", "flyTime", "presets", "launchChance", "explosionChance", "velocity");
 
     private static final Map<String, Set<String>> TYPE_KEYS = Map.of(
             "original", Set.of("count", "xOff", "yOff", "zOff"),
@@ -255,6 +255,7 @@ public final class SchedulerValidator {
         checkFlyTime(node.get("flyTime"), path + ".flyTime", issues);
         checkChance(node.get("launchChance"), path + ".launchChance", "发射声", issues);
         checkChance(node.get("explosionChance"), path + ".explosionChance", "爆炸声", issues);
+        checkVelocity(node.get("velocity"), path + ".velocity", issues);
         checkPresets(node.get("presets"), path + ".presets", presetIds, issues);
 
         switch (type) {
@@ -369,6 +370,23 @@ public final class SchedulerValidator {
         } else if (flyTime > VISIBLE_TICKS) {
             warn(issues, path, flyTime.intValue() + " tick 超出渲染范围：火箭在 56 tick 后已升到 64 格外，"
                     + "引爆点看不到", "建议不超过 " + VISIBLE_TICKS);
+        }
+    }
+
+    private static void checkVelocity(Object raw, String path, List<ConfigIssue> issues) {
+        if (raw == null) {
+            return;
+        }
+        Double velocity = number(raw);
+        if (velocity == null) {
+            warn(issues, path, "应为数字（格/tick），节点会当作 0 处理", "例如 0.2");
+            return;
+        }
+        if (velocity < 0) {
+            warn(issues, path, "初速度 " + velocity + " 为负，火箭会先下沉再上升", "保持 0 或改成正数");
+        } else if (velocity > 2) {
+            warn(issues, path, "初速度 " + velocity + " 格/tick 偏大，火箭会很快飞出 64 格的渲染范围",
+                    "一般 0 到 1 之间就够用");
         }
     }
 

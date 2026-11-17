@@ -65,6 +65,11 @@ public class PepperConfigModule {
         @ConfigPath("explosionChance")
         @ConfigComment("单个火箭爆炸声（砰）的播放概率：0 全部静音，1 全部发声")
         public double explosionChance = 0.1;
+
+        @ConfigPath("velocity")
+        @ConfigComment({"叠加在每个点上的竖直初速度（格/tick），0 表示只靠按行分摊的速度",
+                "文字烟花的点本来就靠初速度拉出高度差，这里再加会让整块字一起升高"})
+        public double velocity = 0.0;
     }
 
     @ConfigModel
@@ -108,6 +113,11 @@ public class PepperConfigModule {
         @ConfigPath("explosionChance")
         @ConfigComment("单个烟花爆炸声（砰）的播放概率：0 全部静音，1 全部发声")
         public double explosionChance = 0.2;
+
+        @ConfigPath("velocity")
+        @ConfigComment({"火箭的竖直初速度（格/tick），0 表示和以前一样只靠加速度上升",
+                "调大后飞得更快更高，飞行时间不变时爆炸位置会整体抬高"})
+        public double velocity = 0.0;
 
         @ConfigPath("blacklistWorlds")
         @ConfigComment("不生成随机烟花的世界")

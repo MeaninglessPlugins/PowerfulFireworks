@@ -49,10 +49,10 @@ class TextFireworkNode extends FireworkNode {
         }
 
         if(this.rotate){
-            firework = new TextFirework(font, text, gap, this.size, this.launchChance, this.explosionChance);
+            firework = new TextFirework(font, text, gap, this.size, this.launchChance, this.explosionChance, this.velocity);
         }
         else {
-            firework = new TextFirework(font, text, gap, this.size, this.face, this.launchChance, this.explosionChance);
+            firework = new TextFirework(font, text, gap, this.size, this.face, this.launchChance, this.explosionChance, this.velocity);
         }
     }
 

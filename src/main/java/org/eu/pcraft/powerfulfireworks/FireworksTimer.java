@@ -49,11 +49,11 @@ public class FireworksTimer extends PepperRollTimer {
                     } else {
                         String text = config.text.texts.get(rd.nextInt(config.text.texts.size()));
                         sender = new TextFirework(font, text, config.text.gap, config.text.size,
-                                config.text.launchChance, config.text.explosionChance);
+                                config.text.launchChance, config.text.explosionChance, config.text.velocity);
                     }
                 }
                 if (sender == null) {
-                    sender = new SingleFirework(config.launchChance, config.explosionChance);
+                    sender = new SingleFirework(config.launchChance, config.explosionChance, config.velocity);
                 }
 
                 sender.execute(

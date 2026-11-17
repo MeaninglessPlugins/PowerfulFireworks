@@ -36,6 +36,12 @@ public class NMSProviderImpl extends org.eu.pcraft.powerfulfireworks.nms.v1_20_4
     }
 
     @Override
+    public NMSAddEntityPacket createAddFireworkEntityPacket(int id, UUID uuid, Location location,
+                                                            double vx, double vy, double vz) {
+        return new NMSAddEntityPacketImpl(new ClientboundAddEntityPacket(id, uuid, location.x(), location.y(), location.z(), location.getPitch(), location.getYaw(), EntityType.FIREWORK_ROCKET, 0, new Vec3(vx, vy, vz), 0));
+    }
+
+    @Override
     public NMSEntityEventPacket createEntityEvent(int entity, byte event) {
         FriendlyByteBuf fbb = new FriendlyByteBuf(Unpooled.buffer());
         fbb.writeInt(entity);

@@ -87,6 +87,7 @@ presets:
 | `presets` | 无 | 从演出预设里随机取一个；不写就用随机生成的烟花 |
 | `launchChance` | `0.1` | 该节点下每支烟花发射声的播放概率 |
 | `explosionChance` | `0.2` | 该节点下每支烟花爆炸声的播放概率 |
+| `velocity` | `0` | 该节点烟花的竖直初速度（格/tick），见 [config 的初速度](configuration.md#初速度) |
 
 ### original
 

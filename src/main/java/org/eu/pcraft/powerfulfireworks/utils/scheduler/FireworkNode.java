@@ -14,6 +14,8 @@ public abstract class FireworkNode extends CommonNode{
     protected double launchChance = 0.1;
     /** 该节点下每个烟花爆炸声的播放概率：0 全部静音，1 全部发声 */
     protected double explosionChance = 0.2;
+    /** 火箭的竖直初速度（格/tick），0 表示沿用原来的加速度曲线 */
+    protected double velocity = 0;
     final List<ItemStack> presets = new ArrayList<>();
     ThreadLocalRandom rd = ThreadLocalRandom.current();
 
@@ -22,6 +24,7 @@ public abstract class FireworkNode extends CommonNode{
         this.flyTime = ((Number) section.getOrDefault("flyTime", 0)).intValue();
         this.launchChance = ((Number) section.getOrDefault("launchChance", 0.1)).doubleValue();
         this.explosionChance = ((Number) section.getOrDefault("explosionChance", 0.2)).doubleValue();
+        this.velocity = ((Number) section.getOrDefault("velocity", 0.0)).doubleValue();
         // presets，允许写单个名字或名字列表
         Object presetSection = section.get("presets");
         if (presetSection instanceof String single) {

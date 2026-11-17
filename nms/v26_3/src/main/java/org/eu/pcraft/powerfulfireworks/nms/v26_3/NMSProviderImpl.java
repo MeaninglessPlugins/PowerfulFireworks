@@ -84,10 +84,16 @@ public class NMSProviderImpl implements NMSProvider {
 
     @Override
     public NMSAddEntityPacket createAddFireworkEntityPacket(int id, UUID uuid, Location location) {
+        return createAddFireworkEntityPacket(id, uuid, location, 0.0, 0.0, 0.0);
+    }
+
+    @Override
+    public NMSAddEntityPacket createAddFireworkEntityPacket(int id, UUID uuid, Location location,
+                                                            double vx, double vy, double vz) {
         // 26.x 把 EntityType 上的静态实例拆到了 EntityTypes。
         ClientboundAddEntityPacket packet = new ClientboundAddEntityPacket(
                 id, uuid, location.x(), location.y(), location.z(), location.getPitch(), location.getYaw(),
-                EntityTypes.FIREWORK_ROCKET, 0, Vec3.ZERO, 0.0);
+                EntityTypes.FIREWORK_ROCKET, 0, new Vec3(vx, vy, vz), 0.0);
         return new NMSAddEntityPacketImpl(packet);
     }
 

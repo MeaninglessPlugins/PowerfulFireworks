@@ -10,6 +10,18 @@ public interface NMSProvider {
     String getVersion();
 
     NMSAddEntityPacket createAddFireworkEntityPacket(int id, UUID uuid, Location location);
+
+    /**
+     * 创建带初速度的火箭实体包。
+     *
+     * @param vx 水平初速度（格/tick）
+     * @param vy 竖直初速度（格/tick）
+     * @param vz 水平初速度（格/tick）
+     */
+    default NMSAddEntityPacket createAddFireworkEntityPacket(int id, UUID uuid, Location location,
+                                                             double vx, double vy, double vz) {
+        return createAddFireworkEntityPacket(id, uuid, location);
+    }
     NMSEntityEventPacket createEntityEvent(int entity, byte event);
     NMSEntityDataPacket createFireworkEntityDataPacket(int id, ItemStack item);
 

@@ -72,6 +72,12 @@ public class NMSProviderImpl implements NMSProvider {
         return new NMSAddEntityPacketImpl(new ClientboundAddEntityPacket(id, uuid, location.x(), location.y(), location.z(), location.getPitch(), location.getYaw(), EntityType.FIREWORK_ROCKET, 0, Vec3.ZERO, 0));
     }
 
+    @Override
+    public NMSAddEntityPacket createAddFireworkEntityPacket(int id, UUID uuid, Location location,
+                                                            double vx, double vy, double vz) {
+        return new NMSAddEntityPacketImpl(new ClientboundAddEntityPacket(id, uuid, location.x(), location.y(), location.z(), location.getPitch(), location.getYaw(), EntityType.FIREWORK_ROCKET, 0, new Vec3(vx, vy, vz), 0));
+    }
+
     public NMSEntityDataPacket createFireworkEntityDataPacket(int id, ItemStack item) {
         net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
         return new NMSEntityDataPacketImpl(new ClientboundSetEntityDataPacket(id, List.of(SynchedEntityData.DataValue.create(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, nms))));

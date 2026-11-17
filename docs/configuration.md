@@ -62,6 +62,7 @@ randomFirework:
     maximum: 50
   launchChance: 0.1
   explosionChance: 0.2
+  velocity: 0.0
   blacklistWorlds:
     - world_nether
   text:
@@ -74,6 +75,7 @@ randomFirework:
     chance: 0.05
     launchChance: 0.05
     explosionChance: 0.1
+    velocity: 0.0
 
 fonts:
   example: example.bdf
@@ -100,6 +102,7 @@ fonts:
 | `flyTime` | `25`–`50` | 火箭升空多久后爆炸（tick），见下面的「升空时间」 |
 | `launchChance` | `0.1` | 普通烟花**发射声**的播放概率，每支独立掷一次 |
 | `explosionChance` | `0.2` | 普通烟花**爆炸声**的播放概率，每支独立掷一次 |
+| `velocity` | `0.0` | 火箭的竖直初速度（格/tick），见下面的「初速度」 |
 | `blacklistWorlds` | `[world_nether]` | 不生成随机烟花的世界 |
 
 生成位置在高空：先在以玩家为圆心、半径为上面那个值的圆内均匀取一点，再把 Y 抬到该列最高方块的上一格。
@@ -118,8 +121,19 @@ fonts:
 | `gap` | `2` | 相邻两个字符之间空几列像素 |
 | `launchChance` | `0.05` | 文本烟花发射声的播放概率 |
 | `explosionChance` | `0.1` | 文本烟花爆炸声的播放概率 |
+| `velocity` | `0.0` | 叠加在每个点上的竖直初速度（格/tick），会把整块字一起升高 |
 
 文本烟花只发给触发它的那个玩家，点的数量多的句子会比较壮观，注意别让 `size` 和句子长度一起溢出。
+
+## 初速度
+
+`velocity` 是火箭的**竖直**初速度，单位格/tick，作用在实体生成包的速度分量上：
+
+- 不写或写 `0` 时，火箭完全靠客户端自己施加的加速度上升：`y(t) = 0.02·t·(t+1)`，40 tick 约 33 格。
+- 写成 `v` 后，高度变成 `y(t) = v·t + 0.02·t·(t+1)`，上升更快、爆炸更高。`flyTime` 不变时爆炸位置会整体抬高，可能出现"炸得太高看不见"——超过 64 格后客户端的火花会消失，所以调大 `velocity` 通常要同步减小 `flyTime`。
+- 负数会让火箭先下沉再上升，一般用不到。
+
+文本烟花内部就是用这个机制铺开的：所有点从**同一个高度**出发，第 n 行（从下往上数）额外带上 `n·size / flyTime` 的初速度，于是爆炸时的落点与"每一行起点抬高 `n·size`"完全一致。`velocity` 是在这之上再叠一个整体偏移，会让整块字一起升高。
 
 ## fonts
 

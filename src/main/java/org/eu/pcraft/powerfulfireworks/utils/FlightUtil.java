@@ -32,8 +32,17 @@ public final class FlightUtil {
      * 第 {@code ticks} tick 时，火箭相对生成点的上升高度（格）。
      */
     public static double riseAt(int ticks) {
+        return riseAt(ticks, 0.0);
+    }
+
+    /**
+     * 第 {@code ticks} tick 时，火箭相对生成点的上升高度（格）。
+     *
+     * <p>竖直初速度 {@code velocity} 会按 tick 线性叠加在原有的加速度曲线之上。
+     */
+    public static double riseAt(int ticks, double velocity) {
         if (ticks <= 0) return 0.0;
-        return 0.02 * ticks * (ticks + 1.0);
+        return velocity * ticks + 0.02 * ticks * (ticks + 1.0);
     }
 
     /**
@@ -41,8 +50,17 @@ public final class FlightUtil {
      * 解 {@code 0.02t² + 0.02t - rise = 0}。
      */
     public static int ticksForRise(double rise) {
+        return ticksForRise(rise, 0.0);
+    }
+
+    /**
+     * 上升到 {@code rise} 格所需的 tick 数，即 {@link #riseAt(int, double)} 的反函数。
+     * 解 {@code 0.02t² + (0.02 + v)t - rise = 0}。
+     */
+    public static int ticksForRise(double rise, double velocity) {
         if (rise <= 0.0) return 0;
-        return (int) Math.ceil((-0.02 + Math.sqrt(0.0004 + 0.08 * rise)) / 0.04);
+        double b = 0.02 + velocity;
+        return (int) Math.ceil((-b + Math.sqrt(b * b + 0.08 * rise)) / 0.04);
     }
 
     /**
@@ -57,6 +75,16 @@ public final class FlightUtil {
      * @return 裁剪后的 tick 数；无可裁剪时原样返回
      */
     public static int clampFlyTime(int flyTime, Location spawn, Collection<? extends Player> viewers) {
+        return clampFlyTime(flyTime, spawn, viewers, 0.0);
+    }
+
+    /**
+     * 把飞行时长裁剪到观看者仍能看见的最大 tick 数。
+     *
+     * @param velocity 竖直初速度（格/tick），越大越早飞出渲染范围
+     */
+    public static int clampFlyTime(int flyTime, Location spawn, Collection<? extends Player> viewers,
+                                   double velocity) {
         if (flyTime <= 1 || spawn == null || spawn.getWorld() == null
                 || viewers == null || viewers.isEmpty()) {
             return flyTime;
@@ -82,7 +110,7 @@ public final class FlightUtil {
 
             // 该玩家能看到的最高高度：眼睛高度 + 可见球在该水平距离上的竖直分量
             double topY = eye.getY() + Math.sqrt(safeSq - horizontalSq);
-            int maxTicks = ticksForRise(topY - spawn.getY());
+            int maxTicks = ticksForRise(topY - spawn.getY(), velocity);
 
             if (maxTicks < limit) {
                 limit = maxTicks;

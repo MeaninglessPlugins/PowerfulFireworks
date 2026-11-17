@@ -78,6 +78,23 @@ public final class FireworkUtil {
      * @return 实体 id 与创建时的静音状态
      */
     public static CreatedFirework broadcastFireworkCreate(Collection<Player> targets, ItemStack item, Location location, double launchChance) {
+        return broadcastFireworkCreate(targets, item, location, launchChance, 0.0, 0.0, 0.0);
+    }
+
+    /**
+     * Broadcast firework add and data to players
+     *
+     * @param targets players
+     * @param item firework item
+     * @param location location
+     * @param launchChance 发射声播放概率（0-1），每个烟花独立掷一次
+     * @param vx 水平初速度（格/tick）
+     * @param vy 竖直初速度（格/tick）
+     * @param vz 水平初速度（格/tick）
+     * @return 实体 id 与创建时的静音状态
+     */
+    public static CreatedFirework broadcastFireworkCreate(Collection<Player> targets, ItemStack item, Location location,
+                                                          double launchChance, double vx, double vy, double vz) {
         if (item.getType() != Material.FIREWORK_ROCKET)
             throw new IllegalArgumentException("Item is not a firework rocket");
         if (!item.hasItemMeta())
@@ -89,7 +106,7 @@ public final class FireworkUtil {
 
         // prepare packets
         final int id = provider.allocateEntityId();
-        NMSAddEntityPacket add = provider.createAddFireworkEntityPacket(id, UUID.randomUUID(), location);
+        NMSAddEntityPacket add = provider.createAddFireworkEntityPacket(id, UUID.randomUUID(), location, vx, vy, vz);
         boolean launchSilent = ThreadLocalRandom.current().nextDouble() >= launchChance;
         NMSEntityDataPacket data = provider.createFireworkEntityDataPacket(id, item, launchSilent);
 
