@@ -24,15 +24,16 @@ import java.util.List;
 
         @Override
         public void execute(int flyTime, ItemStack stack, Location fwLoc, List<Player> playerList) {
-            int[] id = {FireworkUtil.broadcastFireworkCreate(
-                        playerList,
-                        stack,
-                        fwLoc,
-                        launchChance)};
+            FireworkUtil.CreatedFirework created = FireworkUtil.broadcastFireworkCreate(
+                    playerList,
+                    stack,
+                    fwLoc,
+                    launchChance);
             BukkitRunnable fireworkExplosionTask = new BukkitRunnable() {
                 @Override
                 public void run() {
-                    FireworkUtil.broadcastFireworkExplosion(playerList, explosionChance, id);
+                    FireworkUtil.broadcastFireworkExplosion(playerList, explosionChance,
+                            new boolean[]{created.silent()}, created.id());
                 }
             };
             // 按客户端 64 格渲染范围裁剪飞行时间，避免火箭在引爆前被截断

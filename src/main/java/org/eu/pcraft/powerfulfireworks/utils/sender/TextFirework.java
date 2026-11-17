@@ -91,7 +91,7 @@ public class TextFirework implements FireworkSender {
         new BukkitRunnable() {
             @Override
             public void run() {
-                FireworkUtil.broadcastFireworkExplosion(playerList, explosionChance, entityIds);
+                FireworkUtil.broadcastFireworkExplosion(playerList, explosionChance, silent, entityIds);
             }
         }.runTaskLater(PowerfulFireworks.getInstance(), safeFlyTime);
     }
