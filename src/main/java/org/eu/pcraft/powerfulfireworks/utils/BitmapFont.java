@@ -12,12 +12,79 @@ import static java.lang.Math.max;
 @AllArgsConstructor
 public class BitmapFont {
 
+    /**
+     * 一段文字的点阵：每行是一串 {@code '0'/'1'}，{@code '1'} 表示这里有点。
+     *
+     * <p>行序与文件一致，第一行是字的顶部；{@link #rows} 会倒过来，让第一行变成最底下那行。
+     */
     public record CharBitmap(String[] chars) {
+
+        /** 某一行亮着的点，以及这一行相对底面的高度。 */
+        public record Row(int index, double lift, List<double[]> points) {
+        }
+
             CharBitmap(int length) {
                 this(new String[length]);
                 Arrays.fill(this.chars, "");
             }
+
+        /** 点阵宽度（列数）；空点阵为 0。 */
+        public int width() {
+            return chars.length == 0 || chars[0] == null ? 0 : chars[0].length();
         }
+
+        /** 点阵行数。 */
+        public int height() {
+            return chars.length;
+        }
+
+        /** 亮着的点总数，也就是要发多少支烟花。 */
+        public int pointCount() {
+            int count = 0;
+            for (String line : chars) {
+                for (int i = 0; i < line.length(); i++) {
+                    if (line.charAt(i) != '0') {
+                        count++;
+                    }
+                }
+            }
+            return count;
+        }
+
+        /**
+         * 把点阵摊成世界坐标：以点阵中心对齐，底面在 y=0，每一行带上自己该补的高度。
+         *
+         * @param size 每个点之间的间距（也是字号）
+         * @param xMod 朝向在 x 轴上的分量，取值 -1 / 0 / 1
+         * @param zMod 朝向在 z 轴上的分量，取值 -1 / 0 / 1
+         */
+        public List<Row> rows(double size, int xMod, int zMod) {
+            int width = width();
+            if (width == 0) {
+                return List.of();
+            }
+            double startX = -(xMod * size * width) / 2.0;
+            double startZ = -(zMod * size * width) / 2.0;
+
+            List<Row> rows = new ArrayList<>(chars.length);
+            int row = 0;
+            for (int lineIndex = chars.length - 1; lineIndex >= 0; lineIndex--) {
+                String line = chars[lineIndex];
+                List<double[]> points = new ArrayList<>();
+                for (int column = 0; column < width; column++) {
+                    if (line.charAt(column) != '0') {
+                        points.add(new double[]{
+                                startX + column * size * xMod,
+                                0,
+                                startZ + column * size * zMod});
+                    }
+                }
+                rows.add(new Row(row, (row + 1) * size, List.copyOf(points)));
+                row++;
+            }
+            return rows;
+        }
+    }
 
     private final Map<Character, CharBitmap> characters;
     private final int charHeight;

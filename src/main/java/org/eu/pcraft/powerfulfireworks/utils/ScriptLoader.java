@@ -26,7 +26,8 @@ import org.slf4j.Logger;
 public final class ScriptLoader {
 
     private static final String EXTENSION = ".js";
-    private static final String EXAMPLE = "example.js";
+    /** 目录里一个脚本都没有时写出去的示例，按顺序尝试。 */
+    private static final List<String> EXAMPLES = List.of("example.js", "text.js");
     private static final String SOURCE = "scripts";
 
     private ScriptLoader() {
@@ -60,7 +61,7 @@ public final class ScriptLoader {
         if (files.isEmpty()) {
             // 没有脚本时放一份示例，省掉"必须先看文档才知道写什么"的门槛
             if (!dryRun) {
-                installExample(scriptsDir, bundled, logger, reporter);
+                installExamples(scriptsDir, bundled, logger, reporter);
                 try {
                     files = listScripts(scriptsDir);
                 } catch (IOException e) {
@@ -106,23 +107,25 @@ public final class ScriptLoader {
         }
     }
 
-    private static void installExample(Path dir, Function<String, byte[]> bundled,
+    private static void installExamples(Path dir, Function<String, byte[]> bundled,
                                        Logger logger, DiagnosticReporter reporter) {
-        byte[] data = bundled == null ? null : bundled.apply(EXAMPLE);
-        if (data == null) {
-            reporter.add(SOURCE, List.of(new ConfigIssue(IssueLevel.WARN, EXAMPLE,
-                    "jar 里没有示例脚本 " + EXAMPLE,
-                    "重新打包插件")));
-            return;
-        }
-        Path target = dir.resolve(EXAMPLE);
-        try {
-            Files.write(target, data);
-            logger.info("已写出示例脚本 {}", target.getFileName());
-        } catch (IOException e) {
-            reporter.add(SOURCE, List.of(new ConfigIssue(IssueLevel.WARN, EXAMPLE,
-                    "无法写出示例脚本：" + e.getMessage(),
-                    "确认目录可写")));
+        for (String name : EXAMPLES) {
+            byte[] data = bundled == null ? null : bundled.apply(name);
+            if (data == null) {
+                reporter.add(SOURCE, List.of(new ConfigIssue(IssueLevel.WARN, name,
+                        "jar 里没有示例脚本 " + name,
+                        "重新打包插件")));
+                continue;
+            }
+            Path target = dir.resolve(name);
+            try {
+                Files.write(target, data);
+                logger.info("已写出示例脚本 {}", target.getFileName());
+            } catch (IOException e) {
+                reporter.add(SOURCE, List.of(new ConfigIssue(IssueLevel.WARN, name,
+                        "无法写出示例脚本：" + e.getMessage(),
+                        "确认目录可写")));
+            }
         }
     }
 }

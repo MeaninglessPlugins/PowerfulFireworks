@@ -10,10 +10,11 @@ import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSAddEntityPacket;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSEntityDataPacket;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
+import org.eu.pcraft.powerfulfireworks.utils.BitmapFont.CharBitmap;
+import org.eu.pcraft.powerfulfireworks.utils.BitmapFont.CharBitmap.Row;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 import org.eu.pcraft.powerfulfireworks.utils.FlightUtil;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -67,11 +68,11 @@ public class TextFirework implements FireworkSender {
         // 1. 初始化点阵数据
         //    点阵、id、uuid 都是本次执行的局部状态：同一实例会被连续调用，
         //    而爆炸任务延迟执行，这些数据不能挂在实例字段上。
-        String[] bitmapLines = font.fromString(text, gap).chars();
+        CharBitmap bitmap = font.fromString(text, gap);
 
         // 2. 计算需要生成的实体总数 (烟花总像素点)
-        int totalFireworks = calculateTotalPoints(bitmapLines);
-        if (bitmapLines.length == 0 || totalFireworks == 0) {
+        int totalFireworks = bitmap.pointCount();
+        if (bitmap.height() == 0 || totalFireworks == 0) {
             // 空串或全空白：没有可放的点，不发包也不建爆炸任务
             return;
         }
@@ -90,7 +91,7 @@ public class TextFirework implements FireworkSender {
 
         // 5. 先裁剪飞行时间：所有点从同一高度出发，按行分摊的初速度要按最终 tick 数算
         //    按文字最高的一行裁剪，保证整块字都在客户端 64 格的渲染范围内引爆。
-        Location topMost = originLoc.clone().add(0, bitmapLines.length * size, 0);
+        Location topMost = originLoc.clone().add(0, bitmap.height() * size, 0);
         int flyTicks = Math.max(1, FlightUtil.clampFlyTime(flyTime, topMost, playerList, velocity));
         if (flyTicks <= 1) {
             // 一 tick 就飞出渲染范围，铺开也没有意义
@@ -99,9 +100,9 @@ public class TextFirework implements FireworkSender {
 
         // 6. 发送生成包 (根据是否固定朝向分流处理)
         if (face != null) {
-            handleFixedDirection(bitmapLines, entityIds, entityUuids, silent, flyTicks, stack, originLoc, playerList);
+            handleFixedDirection(bitmap, entityIds, entityUuids, silent, flyTicks, stack, originLoc, playerList);
         } else {
-            handleDynamicDirection(bitmapLines, entityIds, entityUuids, silent, flyTicks, stack, originLoc, playerList);
+            handleDynamicDirection(bitmap.chars(), entityIds, entityUuids, silent, flyTicks, stack, originLoc, playerList);
         }
 
         // 7. 创建爆炸任务 (延迟引爆)
@@ -116,42 +117,20 @@ public class TextFirework implements FireworkSender {
     /**
      * 处理固定朝向的烟花
      */
-    private void handleFixedDirection(String[] bitmapLines, int[] entityIds, UUID[] entityUuids, boolean[] silent,
+    private void handleFixedDirection(CharBitmap bitmap, int[] entityIds, UUID[] entityUuids, boolean[] silent,
                                       int flyTicks, ItemStack stack, Location originLoc, List<Player> recipients) {
-        int length = bitmapLines[0].length();
-        List<Location> currentLocs = new ArrayList<>();
-
-        int xMod = face.getModX();
-        int zMod = face.getModZ();
-
-        // 计算起始 X 和 Z（水平居中）
-        double startX = originLoc.getX() - ((xMod * size * length) / 2.0);
-        double startZ = originLoc.getZ() - ((zMod * size * length) / 2.0);
-
-        // 所有点都在同一个高度出发，靠初速度在飞行结束时拉开到各自那一行
-        for (int i = 0; i < length; i++) {
-            currentLocs.add(new Location(originLoc.getWorld(),
-                    startX + i * size * xMod,
-                    originLoc.getY(), // 从脚下开始
-                    startZ + i * size * zMod
-            ));
-        }
-
         int currentIdIndex = 0;
-        int row = 0;
-
-        for (int lineIndex = bitmapLines.length - 1; lineIndex >= 0; lineIndex--) {
-            String line = bitmapLines[lineIndex];
-            double vy = verticalVelocity(row, flyTicks);
-
-            for (int i = 0; i < length; i++) {
-                if (line.charAt(i) != '0') {
-                    sendPacketToAll(recipients, entityIds[currentIdIndex], entityUuids[currentIdIndex],
-                            currentLocs.get(i), stack, silent[currentIdIndex], vy);
-                    currentIdIndex++;
-                }
+        for (Row row : bitmap.rows(size, face.getModX(), face.getModZ())) {
+            double vy = verticalVelocity(row.index(), flyTicks);
+            for (double[] point : row.points()) {
+                Location at = new Location(originLoc.getWorld(),
+                        originLoc.getX() + point[0],
+                        originLoc.getY() + point[1],
+                        originLoc.getZ() + point[2]);
+                sendPacketToAll(recipients, entityIds[currentIdIndex], entityUuids[currentIdIndex],
+                        at, stack, silent[currentIdIndex], vy);
+                currentIdIndex++;
             }
-            row++;
         }
     }
 
@@ -217,14 +196,4 @@ public class TextFirework implements FireworkSender {
         }
     }
 
-    // 计算有效像素点总数
-    private int calculateTotalPoints(String[] lines) {
-        int count = 0;
-        for (String line : lines) {
-            for (char c : line.toCharArray()) {
-                if (c != '0') count++;
-            }
-        }
-        return count;
-    }
 }

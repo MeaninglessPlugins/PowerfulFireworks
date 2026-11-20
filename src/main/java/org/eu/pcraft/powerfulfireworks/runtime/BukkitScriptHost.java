@@ -3,7 +3,9 @@ package org.eu.pcraft.powerfulfireworks.runtime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
@@ -15,10 +17,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.plugin.Plugin;
+import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.eu.pcraft.powerfulfireworks.script.FireworkRequest;
 import org.eu.pcraft.powerfulfireworks.script.ParticleRequest;
 import org.eu.pcraft.powerfulfireworks.script.PointSetRequest;
 import org.eu.pcraft.powerfulfireworks.script.ScriptHost;
+import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
 import org.slf4j.Logger;
 
@@ -87,6 +91,20 @@ public final class BukkitScriptHost implements ScriptHost {
     @Override
     public void warn(String message) {
         logger.warn("[脚本] {}", message);
+    }
+
+    @Override
+    public BitmapFont font(String id) {
+        return loadedFonts().get(id);
+    }
+
+    @Override
+    public Set<String> fonts() {
+        return loadedFonts().keySet();
+    }
+
+    private Map<String, BitmapFont> loadedFonts() {
+        return plugin instanceof PowerfulFireworks fireworks ? fireworks.getFonts() : Map.of();
     }
 
     private void emitFirework(FireworkRequest request, Location at, double jitter) {

@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.TreeSet;
+
+import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
 
 import org.mozilla.javascript.BaseFunction;
 import org.mozilla.javascript.Context;
@@ -82,6 +85,14 @@ final class ScriptContextObject {
             return Undefined.instance;
         }));
 
+        ScriptableObject.putProperty(ctx, "text", function(scope, (c, s, t, args) -> {
+            if (args.length == 0 || !(args[0] instanceof Scriptable spec)) {
+                throw Context.reportRuntimeError("ctx.text({...}) 需要一个对象参数");
+            }
+            return textShape(host, c, s, spec);
+        }));
+
+
         ScriptableObject.putProperty(ctx, "run", function(scope, (c, s, t, args) -> {
             RunHandle handle = starter.start(scriptId(args, "ctx.run(id, params) 需要脚本 id"), params(args));
             if (handle == null) {
@@ -108,6 +119,87 @@ final class ScriptContextObject {
 
         ScriptableObject.putProperty(ctx, "rand", randomObject(cx, scope, random));
         return ctx;
+    }
+
+    /**
+     * 把一段文字摊成点阵坐标，但不发射。
+     *
+     * <p>返回 {@code {width, height, rows: [{index, lift, points}]}}。点相对演出原点，
+     * y 恒为 0——所有点从同一高度起飞，靠每行的 {@code lift} 在飞行末拉开高度；
+     * 这样脚本可以决定每行用多少 tick、什么速度，甚至换粒子。
+     */
+    private static Scriptable textShape(ScriptHost host, Context cx, Scriptable scope, Scriptable spec) {
+        String content = requiredString(spec, "text");
+        String fontId = requiredString(spec, "font");
+        double size = numberProperty(spec, "size", 1);
+        int gap = (int) numberProperty(spec, "gap", 1);
+        if (size <= 0) {
+            throw Context.reportRuntimeError("size 必须大于 0");
+        }
+        if (gap < 0) {
+            throw Context.reportRuntimeError("gap 不能为负");
+        }
+        if (booleanProperty(spec, "rotate", false)) {
+            throw Context.reportRuntimeError("ctx.text 暂不支持 rotate（逐玩家朝向），请用 face 指定水平朝向");
+        }
+
+        BitmapFont font = host.font(fontId);
+        if (font == null) {
+            throw Context.reportRuntimeError("没有字体 " + fontId + "，可用："
+                    + String.join(" / ", new TreeSet<>(host.fonts())));
+        }
+
+        int[] mods = faceMods(spec);
+        BitmapFont.CharBitmap bitmap = font.fromString(content, gap);
+        List<BitmapFont.CharBitmap.Row> rows = bitmap.rows(size, mods[0], mods[1]);
+
+        Scriptable out = cx.newObject(scope);
+        ScriptableObject.putProperty(out, "width", bitmap.width());
+        ScriptableObject.putProperty(out, "height", bitmap.height());
+        Object[] rowArray = new Object[rows.size()];
+        for (int r = 0; r < rows.size(); r++) {
+            BitmapFont.CharBitmap.Row row = rows.get(r);
+            Scriptable item = cx.newObject(scope);
+            ScriptableObject.putProperty(item, "index", row.index());
+            ScriptableObject.putProperty(item, "lift", row.lift());
+            Object[] points = new Object[row.points().size()];
+            for (int p = 0; p < points.length; p++) {
+                double[] point = row.points().get(p);
+                points[p] = cx.newArray(scope, new Object[]{point[0], point[1], point[2]});
+            }
+            ScriptableObject.putProperty(item, "points", cx.newArray(scope, points));
+            rowArray[r] = item;
+        }
+        ScriptableObject.putProperty(out, "rows", cx.newArray(scope, rowArray));
+        return out;
+    }
+
+    /** 面朝方向 → x/z 分量；只接受四个水平朝向。 */
+    private static int[] faceMods(Scriptable spec) {
+        Object raw = ScriptableObject.getProperty(spec, "face");
+        String face = raw == Scriptable.NOT_FOUND || raw == Undefined.instance
+                ? "NORTH"
+                : Context.toString(raw).trim().toUpperCase(Locale.ROOT);
+        return switch (face) {
+            case "EAST" -> new int[]{1, 0};
+            case "WEST" -> new int[]{-1, 0};
+            case "SOUTH" -> new int[]{0, 1};
+            case "NORTH" -> new int[]{0, -1};
+            default -> throw Context.reportRuntimeError(
+                    "face 只支持水平朝向（EAST / WEST / NORTH / SOUTH），当前为 " + face);
+        };
+    }
+
+    private static String requiredString(Scriptable object, String name) {
+        Object value = ScriptableObject.getProperty(object, name);
+        if (value == Scriptable.NOT_FOUND || value == Undefined.instance) {
+            throw Context.reportRuntimeError(name + " 不能为空");
+        }
+        String text = Context.toString(value);
+        if (text.isEmpty()) {
+            throw Context.reportRuntimeError(name + " 不能为空");
+        }
+        return text;
     }
 
     private static String scriptId(Object[] args, String usage) {

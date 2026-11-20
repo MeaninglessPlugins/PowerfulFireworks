@@ -1,5 +1,9 @@
 package org.eu.pcraft.powerfulfireworks.script;
 
+import java.util.Set;
+
+import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
+
 /**
  * 脚本运行时对外暴露的最小宿主接口。
  *
@@ -36,6 +40,20 @@ public interface ScriptHost {
 
     /** 警告日志：脚本作者能看懂的问题。 */
     void warn(String message);
+
+    /**
+     * 按 id 取字体；没有时返回 {@code null}，由调用方决定怎么报错。
+     *
+     * <p>字体由插件在装载时解析好，脚本只借用它的度量，不参与解析。
+     */
+    default BitmapFont font(String id) {
+        return null;
+    }
+
+    /** 已装载的字体 id，用于把"没有这个字体"报得具体一点。 */
+    default Set<String> fonts() {
+        return Set.of();
+    }
 
     /**
      * 派生一个子宿主，供子脚本使用。
