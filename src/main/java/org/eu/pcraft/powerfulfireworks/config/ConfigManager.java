@@ -102,16 +102,6 @@ public class ConfigManager<T> {
         return this.model;
     }
 
-    /** 最近一次装载的值级状态，供需要区分"写了没有"的规则使用。 */
-    public ConfigValues getValues() {
-        return this.values;
-    }
-
-    /** 最近一次装载的诊断（已同步给 reporter，保留一份便于命令读取计数）。 */
-    public List<ConfigIssue> getIssues() {
-        return List.copyOf(this.issues);
-    }
-
     private void bind(String text) {
         IssueCollector collected = new IssueCollector();
         Bindings.LoadResult<T> result;

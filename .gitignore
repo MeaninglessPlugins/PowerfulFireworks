@@ -125,3 +125,6 @@ run/
 
 *.bdf
 !src/main/resources/fonts/*.bdf
+
+# 设计文档只留在工作区，不进仓库
+/docs/design/

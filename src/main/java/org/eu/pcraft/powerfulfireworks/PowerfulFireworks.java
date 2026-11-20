@@ -24,14 +24,16 @@ import org.eu.pcraft.powerfulfireworks.hook.FireworkItemListener;
 import org.eu.pcraft.powerfulfireworks.hook.VaultHook;
 import org.eu.pcraft.powerfulfireworks.nms.NMSSelector;
 import org.eu.pcraft.powerfulfireworks.nms.common.NMSProvider;
+import org.eu.pcraft.powerfulfireworks.runtime.RuntimeService;
+import org.eu.pcraft.powerfulfireworks.script.CompiledScript;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
 import org.eu.pcraft.powerfulfireworks.utils.FontLoader;
+import org.eu.pcraft.powerfulfireworks.utils.ScriptLoader;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkScheduler;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.SchedulerValidator;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -59,6 +61,8 @@ public final class PowerfulFireworks extends JavaPlugin {
     private PepperConfigModule mainConfig = new PepperConfigModule();
     @Getter private Map<String, BitmapFont> fonts;
     @Getter private Map<String, FireworkScheduler> schedulers;
+    @Getter private Map<String, CompiledScript> scripts = new TreeMap<>();
+    @Getter private RuntimeService runtimeService;
 
     @Getter VaultHook vaultHook = new VaultHook();
 
@@ -102,6 +106,9 @@ public final class PowerfulFireworks extends JavaPlugin {
         if (this.nms == null)
             throw new IllegalStateException("NMS not initialized");
 
+        // 脚本运行时：活动表 + 驱动任务，空闲时不占用调度器；脚本本身在 onLoad 的配置装载里编译
+        this.runtimeService = new RuntimeService(this, getSLF4JLogger(), id -> this.scripts.get(id));
+
         // bStats
         int pluginId = 24294;
         Metrics metrics = new Metrics(this, pluginId);
@@ -135,6 +142,10 @@ public final class PowerfulFireworks extends JavaPlugin {
         //stop timer
         if(timer != null)
             timer.cancel();
+        // 停止仍在跑的脚本，避免残留虚拟实体与任务
+        if (runtimeService != null) {
+            runtimeService.stopAll();
+        }
         getLogger().info("PowerfulFireworks has been disabled.");
     }
 
@@ -175,6 +186,13 @@ public final class PowerfulFireworks extends JavaPlugin {
     }
 
     public void loadConfigurations() {
+        // 重载会换掉脚本定义，正在跑的旧运行没有意义了；先停再读，避免加载期间继续发射
+        if (runtimeService != null) {
+            int stopped = runtimeService.stopAll();
+            if (stopped > 0) {
+                getSLF4JLogger().info("重载前停止了 {} 个脚本运行", stopped);
+            }
+        }
         loadAll(getDataFolder().toPath(), false);
     }
 
@@ -225,9 +243,13 @@ public final class PowerfulFireworks extends JavaPlugin {
             Map<String, FireworkScheduler> schedulers =
                     SchedulerValidator.load(dataPath.resolve("fireworks"), fonts.keySet(), reporter);
 
+            Map<String, CompiledScript> scripts = ScriptLoader.load(
+                    dataPath.resolve("scripts"), this::readBundledScript, getSLF4JLogger(), reporter, dryRun);
+
             if (!dryRun) {
                 this.fonts = fonts;
                 this.schedulers = schedulers;
+                this.scripts = scripts;
                 getSLF4JLogger().info("Loaded {} firework schedulers", schedulers.size());
                 updateCommandCompletions();
             }
@@ -244,6 +266,15 @@ public final class PowerfulFireworks extends JavaPlugin {
     /** 读 jar 里自带的字体文件，供首次运行时释放到插件目录。 */
     private byte[] readBundledFont(String fileName) {
         try (InputStream in = getResource("fonts/" + fileName)) {
+            return in == null ? null : in.readAllBytes();
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /** 读 jar 里自带的脚本，供首次运行时释放到插件目录。 */
+    private byte[] readBundledScript(String fileName) {
+        try (InputStream in = getResource("scripts/" + fileName)) {
             return in == null ? null : in.readAllBytes();
         } catch (IOException e) {
             return null;

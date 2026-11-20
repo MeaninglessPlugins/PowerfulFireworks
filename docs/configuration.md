@@ -24,12 +24,12 @@ flyTime:
 
 ## 配置校验
 
-加载时会顺带检查一遍 `config.yml`、`messages.yml` 与 `fireworks/*.yml`，问题分两档：
+加载时会顺带检查一遍 `config.yml`、`messages.yml`、`fireworks/*.yml` 与 `scripts/*.js`，问题分两档：
 
 | 级别 | 含义 | 例子 |
 | --- | --- | --- |
 | `ERROR` | 这一项不会按你写的生效：已经回落成默认值，或者整份文件被跳过 | `flyTime` 最小值大于最大值、概率写成 `1.5`、引用了不存在的预设、两个文件用了同一个 `id` |
-| `WARN` | 能跑，但会在已知的边界上丢效果 | `flyTime` 超过 56 tick（火箭这时候已经在 64 格外）、`automaticDistance: true` 时还写了 `distance`、节点里写了不认识的键、`fonts` 指向的 BDF 文件不存在（文本烟花退回普通烟花） |
+| `WARN` | 能跑，但会在已知的边界上丢效果 | `flyTime` 超过 56 tick（火箭这时候已经在 64 格外）、`automaticDistance: true` 时还写了 `distance`、节点里写了不认识的键、`fonts` 指向的 BDF 文件不存在（文本烟花退回普通烟花）、`scripts` 下的脚本编译失败（这个脚本不会运行） |
 
 只想看看有没有问题，不想重载：
 

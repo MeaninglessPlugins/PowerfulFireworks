@@ -4,6 +4,8 @@ import cn.afternode.commons.bukkit.BukkitPluginContext;
 import cn.afternode.commons.bukkit.message.MessageBuilder;
 import cn.afternode.commons.bukkit.message.TabBuilder;
 import lombok.Setter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -14,6 +16,8 @@ import org.bukkit.inventory.ItemStack;
 import org.eu.pcraft.powerfulfireworks.Permissions;
 import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.eu.pcraft.powerfulfireworks.config.DiagnosticReporter;
+import org.eu.pcraft.powerfulfireworks.runtime.BukkitScriptHost;
+import org.eu.pcraft.powerfulfireworks.script.CompiledScript;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkScheduler;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkStartupConfig;
@@ -29,6 +33,7 @@ public class MainCommand extends Command {
     private String[] fontIdComp;
     private String[] fireworkComp;
     private String[] fireworkItemComp;
+    private int runSeq;
 
     public MainCommand(PowerfulFireworks plugin) {
         super("fireworks");
@@ -61,6 +66,8 @@ public class MainCommand extends Command {
                 case "check" -> this.check(sender);
                 case "toggle" -> this.toggle(sender);
                 case "item" -> this.item(sender, args);
+                case "script" -> this.script(sender, args);
+                case "stop" -> this.stop(sender);
                 default -> this.help(sender);
             }
         }
@@ -224,6 +231,75 @@ public class MainCommand extends Command {
             }
         }
         mb.send();
+    }
+
+    /**
+     * 运行一个脚本演出。
+     *
+     * <p>原点取执行者当前位置，接收者是同世界、视距范围内的玩家——和随机烟花用的是同一套范围，
+     * 避免出现"看得见烟花的地方收不到包"。
+     */
+    private void script(CommandSender sender, String[] args) {
+        if (!sender.hasPermission(Permissions.CMD_FIREWORKS_SCRIPT)) {
+            sender.sendMessage(Component.text("你没有权限执行这个命令", NamedTextColor.RED));
+            return;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(Component.text("脚本演出需要一个玩家坐标作为原点", NamedTextColor.RED));
+            return;
+        }
+        if (args.length < 3 || !args[1].equalsIgnoreCase("run")) {
+            sender.sendMessage(Component.text("用法：/fireworks script run <名字> [种子]", NamedTextColor.YELLOW));
+            return;
+        }
+
+        Long seed = null;
+        if (args.length > 3) {
+            try {
+                seed = Long.parseLong(args[3]);
+            } catch (NumberFormatException e) {
+                sender.sendMessage(Component.text("种子必须是整数：" + args[3], NamedTextColor.RED));
+                return;
+            }
+        }
+
+        PowerfulFireworks plugin = PowerfulFireworks.getInstance();
+        CompiledScript compiled = plugin.getScripts().get(args[2]);
+        if (compiled == null) {
+            sender.sendMessage(Component.text("找不到脚本 " + args[2], NamedTextColor.RED));
+            return;
+        }
+
+        Location origin = player.getLocation();
+        double max = Bukkit.getViewDistance() * 16.0;
+        List<Player> receivers = origin.getWorld().getPlayers().stream()
+                .filter(p -> p.getLocation().distanceSquared(origin) <= max * max)
+                .toList();
+
+        String id = args[2] + "#" + (++this.runSeq);
+        try {
+            plugin.getRuntimeService().start(id, compiled,
+                    new BukkitScriptHost(plugin.getSLF4JLogger(), origin, receivers), Map.of(), seed);
+        } catch (RuntimeException e) {
+            sender.sendMessage(Component.text(
+                    "脚本 " + args[2] + " 启动失败：" + e.getMessage(), NamedTextColor.RED));
+            plugin.getSLF4JLogger().warn("脚本 {} 启动失败", args[2], e);
+            return;
+        }
+
+        sender.sendMessage(Component.text(
+                "已启动脚本 " + args[2] + (seed == null ? "" : "（seed " + seed + "）")
+                        + "，接收者 " + receivers.size() + " 人", NamedTextColor.GREEN));
+    }
+
+    /** 停止所有正在跑的脚本演出。 */
+    private void stop(CommandSender sender) {
+        if (!sender.hasPermission(Permissions.CMD_FIREWORKS_STOP)) {
+            sender.sendMessage(Component.text("你没有权限执行这个命令", NamedTextColor.RED));
+            return;
+        }
+        int count = PowerfulFireworks.getInstance().getRuntimeService().stopAll();
+        sender.sendMessage(Component.text("已停止 " + count + " 个演出", NamedTextColor.GREEN));
     }
 
     private void item(CommandSender sender, String[] args) {
