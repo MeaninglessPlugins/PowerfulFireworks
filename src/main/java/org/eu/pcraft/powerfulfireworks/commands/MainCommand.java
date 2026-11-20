@@ -279,7 +279,7 @@ public class MainCommand extends Command {
         String id = args[2] + "#" + (++this.runSeq);
         try {
             plugin.getRuntimeService().start(id, compiled,
-                    new BukkitScriptHost(plugin.getSLF4JLogger(), origin, receivers), Map.of(), seed);
+                    new BukkitScriptHost(plugin, plugin.getSLF4JLogger(), origin, receivers), Map.of(), seed);
         } catch (RuntimeException e) {
             sender.sendMessage(Component.text(
                     "脚本 " + args[2] + " 启动失败：" + e.getMessage(), NamedTextColor.RED));

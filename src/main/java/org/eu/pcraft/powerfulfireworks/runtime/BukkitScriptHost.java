@@ -14,6 +14,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
+import org.bukkit.plugin.Plugin;
 import org.eu.pcraft.powerfulfireworks.script.FireworkRequest;
 import org.eu.pcraft.powerfulfireworks.script.ParticleRequest;
 import org.eu.pcraft.powerfulfireworks.script.PointSetRequest;
@@ -32,12 +33,14 @@ public final class BukkitScriptHost implements ScriptHost {
     /** 烟花之间的随机水平偏移半径：避免同一发里几支火箭完全重叠。点集传 0，要精确落点。 */
     private static final double FIREWORK_JITTER = 0.75;
 
+    private final Plugin plugin;
     private final Logger logger;
     private final Location origin;
     private final List<Player> receivers;
     private final Random random = new Random();
 
-    public BukkitScriptHost(Logger logger, Location origin, Collection<Player> receivers) {
+    public BukkitScriptHost(Plugin plugin, Logger logger, Location origin, Collection<Player> receivers) {
+        this.plugin = plugin;
         this.logger = logger;
         this.origin = origin.clone();
         this.receivers = List.copyOf(receivers);
@@ -45,7 +48,7 @@ public final class BukkitScriptHost implements ScriptHost {
 
     @Override
     public ScriptHost child() {
-        return new BukkitScriptHost(logger, origin, receivers);
+        return new BukkitScriptHost(plugin, logger, origin, receivers);
     }
 
     @Override
@@ -93,9 +96,20 @@ public final class BukkitScriptHost implements ScriptHost {
         Location base = at.clone().add(request.offsetX(), request.offsetY(), request.offsetZ());
         for (int i = 0; i < request.count(); i++) {
             Location point = base.clone().add(jitter(jitter), 0, jitter(jitter));
-            FireworkUtil.broadcastFireworkCreate(receivers, createRocket(request), point,
+            FireworkUtil.CreatedFirework created = FireworkUtil.broadcastFireworkCreate(
+                    receivers, createRocket(request), point,
                     request.launchChance(), 0, request.velocity(), 0);
+            scheduleExplosion(created.id(), request.fuse());
         }
+    }
+
+    /**
+     * 假实体自己不会爆：服务端不 tick 它，客户端也不会替它触发自爆。
+     * 不排这个任务的话，火箭会一直飞、实体一直留着。
+     */
+    private void scheduleExplosion(int id, int fuse) {
+        plugin.getServer().getScheduler().runTaskLater(plugin,
+                () -> FireworkUtil.broadcastFireworkExplosion(receivers, 1.0, id), fuse);
     }
 
     private void emitParticle(ParticleRequest request, Location at) {

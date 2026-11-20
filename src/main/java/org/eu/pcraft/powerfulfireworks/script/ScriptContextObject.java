@@ -210,6 +210,7 @@ final class ScriptContextObject {
         int power = (int) numberProperty(spec, "power", 2);
         double velocity = numberProperty(spec, "velocity", 0);
         double launchChance = numberProperty(spec, "launchChance", 0.1);
+        int fuse = (int) numberProperty(spec, "fuse", 40);
         boolean trail = booleanProperty(spec, "trail", false);
         boolean flicker = booleanProperty(spec, "flicker", false);
 
@@ -225,7 +226,7 @@ final class ScriptContextObject {
 
         try {
             return new FireworkRequest(count, colors, fade, type, power, trail, flicker, velocity,
-                    offset[0], offset[1], offset[2], launchChance);
+                    offset[0], offset[1], offset[2], launchChance, fuse);
         } catch (IllegalArgumentException e) {
             throw Context.reportRuntimeError(e.getMessage());
         }

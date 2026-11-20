@@ -19,6 +19,7 @@ import java.util.List;
  * @param offsetY      相对原点的垂直偏移
  * @param offsetZ      相对原点的水平偏移
  * @param launchChance 发射声的播放概率
+ * @param fuse         从升空到爆炸的 tick 数；到点后由宿主发爆炸包并清掉实体
  */
 public record FireworkRequest(
         int count,
@@ -32,7 +33,8 @@ public record FireworkRequest(
         double offsetX,
         double offsetY,
         double offsetZ,
-        double launchChance) implements Emission {
+        double launchChance,
+        int fuse) implements Emission {
 
     /** 原版存在的五种爆炸形状。 */
     private static final List<String> TYPES = List.of("BALL", "BALL_LARGE", "STAR", "BURST", "CREEPER");
@@ -46,6 +48,9 @@ public record FireworkRequest(
         }
         if (launchChance < 0 || launchChance > 1) {
             throw new IllegalArgumentException("launchChance 必须在 0..1 之间，当前 " + launchChance);
+        }
+        if (fuse < 1 || fuse > 200) {
+            throw new IllegalArgumentException("fuse 必须在 1..200 之间，当前 " + fuse);
         }
         if (type == null) {
             throw new IllegalArgumentException("type 不能为 null，随机请用空字符串");
