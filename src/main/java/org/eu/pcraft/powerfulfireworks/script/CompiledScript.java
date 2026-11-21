@@ -106,8 +106,7 @@ public final class CompiledScript {
             if (!(value instanceof Function entry)) {
                 throw new CompileException(id + ": 没有入口函数，脚本必须定义 function* main(ctx)");
             }
-            Scriptable paramObj = ScriptContextFactory.paramsObject(cx, scope, safeParams);
-            Scriptable ctx = ScriptContextFactory.create(cx, scope, host, starter, paramObj, random);
+            ScriptContext ctx = new ScriptContext(cx, scope, host, starter, safeParams, random);
             Object result;
             try {
                 // 契约入口只有一个参数；参数通过 ctx.params 读取。

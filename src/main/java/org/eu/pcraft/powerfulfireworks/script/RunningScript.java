@@ -19,7 +19,7 @@ public final class RunningScript implements RunHandle {
 
     private final String id;
     private final Scriptable scope;
-    private final Scriptable ctx;
+    private final ScriptContext ctx;
     private final Scriptable generator;
     private final Function resume;
     private final Sandbox.ScriptBudget budget = new Sandbox.ScriptBudget(TICK_BUDGET);
@@ -30,7 +30,7 @@ public final class RunningScript implements RunHandle {
     private Throwable failure;
     private RunHandle joining;
 
-    private RunningScript(String id, Scriptable scope, Scriptable ctx, Scriptable generator,
+    private RunningScript(String id, Scriptable scope, ScriptContext ctx, Scriptable generator,
                           Function resume) {
         this.id = id;
         this.scope = scope;
@@ -39,7 +39,7 @@ public final class RunningScript implements RunHandle {
         this.resume = resume;
     }
 
-    static RunningScript create(Context cx, String id, Scriptable scope, Scriptable ctx,
+    static RunningScript create(Context cx, String id, Scriptable scope, ScriptContext ctx,
                                 Object entryResult) {
         if (!(entryResult instanceof Scriptable obj)
                 || !(ScriptableObject.getProperty(obj, "next") instanceof Function)) {
@@ -86,7 +86,7 @@ public final class RunningScript implements RunHandle {
             Object outcome;
             try {
                 outcome = Sandbox.call(budget, cx -> {
-                    ScriptContextFactory.setTick(ctx, now);
+                    ctx.setTick(now);
                     return resume.call(cx, scope, scope, new Object[]{generator, Undefined.instance});
                 });
             } catch (Sandbox.ScriptBudgetExceededException e) {
