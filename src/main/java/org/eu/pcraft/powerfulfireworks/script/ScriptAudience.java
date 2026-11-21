@@ -26,16 +26,16 @@ final class ScriptAudience {
     static Scriptable object(Context cx, Scriptable scope) {
         Scriptable audience = cx.newObject(scope);
 
-        ScriptableObject.putProperty(audience, "default", function(scope, (c, s, t, args) ->
+        ScriptableObject.putProperty(audience, "default", function(scope, (c, s, args) ->
                 data(c, s, AudienceSpec.Kind.DEFAULT)));
 
-        ScriptableObject.putProperty(audience, "all", function(scope, (c, s, t, args) ->
+        ScriptableObject.putProperty(audience, "all", function(scope, (c, s, args) ->
                 data(c, s, AudienceSpec.Kind.WORLD)));
 
-        ScriptableObject.putProperty(audience, "none", function(scope, (c, s, t, args) ->
+        ScriptableObject.putProperty(audience, "none", function(scope, (c, s, args) ->
                 data(c, s, AudienceSpec.Kind.NONE)));
 
-        ScriptableObject.putProperty(audience, "world", function(scope, (c, s, t, args) -> {
+        ScriptableObject.putProperty(audience, "world", function(scope, (c, s, args) -> {
             Scriptable out = data(c, s, AudienceSpec.Kind.WORLD);
             if (args.length > 0) {
                 if (!(args[0] instanceof String name) || name.isBlank()) {
@@ -46,7 +46,7 @@ final class ScriptAudience {
             return out;
         }));
 
-        ScriptableObject.putProperty(audience, "radius", function(scope, (c, s, t, args) -> {
+        ScriptableObject.putProperty(audience, "radius", function(scope, (c, s, args) -> {
             double radius = numberArg(args, 0, "ctx.audience.radius(r, ...) 需要半径");
             Scriptable out = data(c, s, AudienceSpec.Kind.RADIUS);
             ScriptableObject.putProperty(out, "radius", radius);
@@ -59,7 +59,7 @@ final class ScriptAudience {
             return out;
         }));
 
-        ScriptableObject.putProperty(audience, "players", function(scope, (c, s, t, args) -> {
+        ScriptableObject.putProperty(audience, "players", function(scope, (c, s, args) -> {
             if (args.length == 0 || !(args[0] instanceof Scriptable list)
                     || !"Array".equals(list.getClassName())) {
                 throw Context.reportRuntimeError("ctx.audience.players([...]) 需要一个名字数组");

@@ -20,7 +20,7 @@ final class ScriptJs {
         BaseFunction fn = new BaseFunction() {
             @Override
             public Object call(Context cx, Scriptable s, Scriptable thisObj, Object[] args) {
-                return body.apply(cx, s, thisObj, args);
+                return body.apply(cx, s, args);
             }
 
             @Override
@@ -48,6 +48,6 @@ final class ScriptJs {
 
     @FunctionalInterface
     interface Fn {
-        Object apply(Context cx, Scriptable scope, Scriptable thisObj, Object[] args);
+        Object apply(Context cx, Scriptable scope, Object[] args);
     }
 }

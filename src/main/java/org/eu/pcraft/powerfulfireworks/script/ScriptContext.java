@@ -25,6 +25,8 @@ import org.mozilla.javascript.Undefined;
  */
 final class ScriptContext extends ScriptableObject {
 
+    private static final long serialVersionUID = 1L;
+
     ScriptContext(Context cx, Scriptable scope, ScriptHost host, RunStarter starter,
                   Map<String, ?> params, Random random) {
         setParentScope(scope);
@@ -32,16 +34,16 @@ final class ScriptContext extends ScriptableObject {
         putProperty(this, "tick", 0);
         putProperty(this, "params", paramsObject(cx, scope, params));
 
-        putProperty(this, "log", function(scope, (c, s, t, args) -> {
+        putProperty(this, "log", function(scope, (c, s, args) -> {
             host.log(join(args));
             return Undefined.instance;
         }));
-        putProperty(this, "warn", function(scope, (c, s, t, args) -> {
+        putProperty(this, "warn", function(scope, (c, s, args) -> {
             host.warn(join(args));
             return Undefined.instance;
         }));
 
-        putProperty(this, "wait", function(scope, (c, s, t, args) -> {
+        putProperty(this, "wait", function(scope, (c, s, args) -> {
             double ticks = args.length == 0 ? 1 : Context.toNumber(args[0]);
             if (!Double.isFinite(ticks) || ticks < 1) {
                 throw Context.reportRuntimeError("ctx.wait(n) 需要正的 tick 数");
@@ -53,7 +55,7 @@ final class ScriptContext extends ScriptableObject {
             return out;
         }));
 
-        putProperty(this, "firework", function(scope, (c, s, t, args) -> {
+        putProperty(this, "firework", function(scope, (c, s, args) -> {
             if (args.length == 0 || !(args[0] instanceof Scriptable spec)) {
                 throw Context.reportRuntimeError("ctx.firework({...}) 需要一个对象参数");
             }
@@ -61,7 +63,7 @@ final class ScriptContext extends ScriptableObject {
             return Undefined.instance;
         }));
 
-        putProperty(this, "particle", function(scope, (c, s, t, args) -> {
+        putProperty(this, "particle", function(scope, (c, s, args) -> {
             if (args.length == 0 || !(args[0] instanceof Scriptable spec)) {
                 throw Context.reportRuntimeError("ctx.particle({...}) 需要一个对象参数");
             }
@@ -69,7 +71,7 @@ final class ScriptContext extends ScriptableObject {
             return Undefined.instance;
         }));
 
-        putProperty(this, "points", function(scope, (c, s, t, args) -> {
+        putProperty(this, "points", function(scope, (c, s, args) -> {
             if (args.length < 2) {
                 throw Context.reportRuntimeError("ctx.points(发射参数, 坐标数组) 需要两个参数");
             }
@@ -84,14 +86,14 @@ final class ScriptContext extends ScriptableObject {
             return Undefined.instance;
         }));
 
-        putProperty(this, "text", function(scope, (c, s, t, args) -> {
+        putProperty(this, "text", function(scope, (c, s, args) -> {
             if (args.length == 0 || !(args[0] instanceof Scriptable spec)) {
                 throw Context.reportRuntimeError("ctx.text({...}) 需要一个对象参数");
             }
             return textShape(host, c, s, spec);
         }));
 
-        putProperty(this, "run", function(scope, (c, s, t, args) -> {
+        putProperty(this, "run", function(scope, (c, s, args) -> {
             RunHandle handle = startChild(starter, args, "ctx.run(id, params) 需要脚本 id");
             Scriptable out = c.newObject(s);
             // 带 join 标签的对象：父运行看到它就挂起，等子运行结束再继续
@@ -99,7 +101,7 @@ final class ScriptContext extends ScriptableObject {
             return out;
         }));
 
-        putProperty(this, "spawn", function(scope, (c, s, t, args) -> {
+        putProperty(this, "spawn", function(scope, (c, s, args) -> {
             startChild(starter, args, "ctx.spawn(id, params) 需要脚本 id");
             return Undefined.instance;
         }));
@@ -110,6 +112,7 @@ final class ScriptContext extends ScriptableObject {
 
     @Override
     public String getClassName() {
+        // 保持与原 NativeObject 一致的 [object Object]。
         return "Object";
     }
 
@@ -276,7 +279,7 @@ final class ScriptContext extends ScriptableObject {
 
     private static Scriptable randomObject(Context cx, Scriptable scope, Random random) {
         Scriptable rand = cx.newObject(scope);
-        putProperty(rand, "int", function(scope, (c, s, t, args) -> {
+        putProperty(rand, "int", function(scope, (c, s, args) -> {
             if (args.length != 2) {
                 throw Context.reportRuntimeError("ctx.rand.int(min, max) 需要两个参数");
             }
@@ -287,19 +290,19 @@ final class ScriptContext extends ScriptableObject {
             }
             return min + random.nextInt(max - min + 1);
         }));
-        putProperty(rand, "float", function(scope, (c, s, t, args) -> {
+        putProperty(rand, "float", function(scope, (c, s, args) -> {
             double min = args.length > 0 ? Context.toNumber(args[0]) : 0.0;
             double max = args.length > 1 ? Context.toNumber(args[1]) : 1.0;
             return min + random.nextDouble() * (max - min);
         }));
-        putProperty(rand, "pick", function(scope, (c, s, t, args) -> {
+        putProperty(rand, "pick", function(scope, (c, s, args) -> {
             if (args.length == 0) {
                 throw Context.reportRuntimeError("ctx.rand.pick(...) 至少需要一个候选值");
             }
             int idx = random.nextInt(args.length);
             return args[idx];
         }));
-        putProperty(rand, "chance", function(scope, (c, s, t, args) -> {
+        putProperty(rand, "chance", function(scope, (c, s, args) -> {
             double p = args.length == 0 ? 0.5 : Context.toNumber(args[0]);
             return random.nextDouble() < p;
         }));
