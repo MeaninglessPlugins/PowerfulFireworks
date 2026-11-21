@@ -4,8 +4,6 @@ import cn.afternode.commons.bukkit.BukkitPluginContext;
 import cn.afternode.commons.bukkit.message.MessageBuilder;
 import cn.afternode.commons.bukkit.message.TabBuilder;
 import lombok.Setter;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -53,7 +51,7 @@ public class MainCommand extends Command {
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         if (!sender.hasPermission(Permissions.CMD_FIREWORKS)) { // no permission
             this.ctx.message(sender)
-                    .localize("commands.no-permission")
+                    .localize("commands.noPermission")
                     .send();
         } else if (args.length == 0) {  // requires args
             this.help(sender);
@@ -78,20 +76,20 @@ public class MainCommand extends Command {
     private void toggle(CommandSender sender){
         if(!(sender instanceof Player)){
             this.ctx.message(sender)
-                    .localize("commands.no-permission")
+                    .localize("commands.noPermission")
                     .send();
             return;
         }
         if(!sender.hasPermission(Permissions.CMD_FIREWORKS_TOGGLE)){
             this.ctx.message(sender)
-                    .localize("commands.no-permission")
+                    .localize("commands.noPermission")
                     .send();
             return;
         }
         PowerfulFireworks plugin = PowerfulFireworks.getInstance();
         plugin.toggleFirework((Player) sender, !plugin.getPlayerSet().contains(sender));
         this.ctx.message(sender)
-                .localize("commands.fireworks.toggle.toggle-message", plugin.getPlayerSet().contains(sender)?"<green>ON":"<red>OFF")
+                .localize("commands.fireworks.toggle.toggleMessage", plugin.getPlayerSet().contains(sender)?"<green>ON":"<red>OFF")
                 .send();
     }
     private void help(CommandSender sender) {
@@ -110,6 +108,10 @@ public class MainCommand extends Command {
             mb.line().text("toggle - ").localize("commands.fireworks.help.toggle");
         if (sender.hasPermission(Permissions.CMD_FIREWORKS_ITEM))
             mb.line().text("item - ").localize("commands.fireworks.help.item");
+        if (sender.hasPermission(Permissions.CMD_FIREWORKS_SCRIPT))
+            mb.line().text("script - ").localize("commands.fireworks.help.script");
+        if (sender.hasPermission(Permissions.CMD_FIREWORKS_STOP))
+            mb.line().text("stop - ").localize("commands.fireworks.help.stop");
         mb.send();
     }
 
@@ -121,7 +123,7 @@ public class MainCommand extends Command {
             if (sender.hasPermission(Permissions.CMD_FIREWORKS_FONT)) {
                 BitmapFont font = PowerfulFireworks.getInstance().getFonts().get(args[1].toLowerCase(Locale.ROOT));
                 if (font == null) {
-                    mb.localize("commands.fireworks.font.not-found");   // not found
+                    mb.localize("commands.fireworks.font.notFound");   // not found
                 } else {
                     BitmapFont.CharBitmap character = font.getCharacter(args[2].charAt(0));
                     // Render to string
@@ -129,17 +131,17 @@ public class MainCommand extends Command {
 
                     for (String aChar : character.chars()) {
                         if (aChar == null) {
-                            mb.line().localize("commands.fireworks.font.no-char", args[1]);    // no such character
+                            mb.line().localize("commands.fireworks.font.noChar", args[1]);    // no such character
                             break;
                         }
                         mb.emptyLine().text(aChar.replace('0', ' ').replace('1', '#'));
                     }
                 }
             } else {    // no permission
-                mb.localize("commands.no-permission");
+                mb.localize("commands.noPermission");
             }
         } else {
-            mb.localize("commands.invalid-args", "fireworks font (font-id) (character)");
+            mb.localize("commands.invalidArgs", "fireworks font (font-id) (character)");
         }
         mb.send();
     }
@@ -147,29 +149,29 @@ public class MainCommand extends Command {
     private void execute(CommandSender sender, String[] args) { // 0:"execute" 1:<scheduler-id> 2:<x> 3:<y> 4:<z> 5:<world>(optional)
         MessageBuilder mb = this.ctx.message(sender);
         if (args.length < 5) {
-            mb.localize("commands.invalid-args", "fireworks execute <firework> <x> <y> <z> (world)");
+            mb.localize("commands.invalidArgs", "fireworks execute <firework> <x> <y> <z> (world)");
         } else if (sender.hasPermission(Permissions.CMD_FIREWORKS_EXECUTE)) {
             FireworkScheduler scheduler = PowerfulFireworks.getInstance().getSchedulers().get(args[1]);
             if (scheduler == null)
-                mb.localize("commands.fireworks.scheduler-not-found");
+                mb.localize("commands.fireworks.execute.schedulerNotFound", args[1]);
             else {
                 double x, y, z;
                 try {
                     x = Double.parseDouble(args[2]);
                 } catch (NumberFormatException t) {
-                    mb.localize("commands.bad-num").send();
+                    mb.localize("commands.badNum").send();
                     return;
                 }
                 try {
                     y = Double.parseDouble(args[3]);
                 } catch (NumberFormatException t) {
-                    mb.localize("commands.bad-num").send();
+                    mb.localize("commands.badNum").send();
                     return;
                 }
                 try {
                     z = Double.parseDouble(args[4]);
                 } catch (NumberFormatException t) {
-                    mb.localize("commands.bad-num").send();
+                    mb.localize("commands.badNum").send();
                     return;
                 }
                 World world = null;
@@ -178,11 +180,11 @@ public class MainCommand extends Command {
                 if (args.length >= 6) {
                     world = Bukkit.getWorld(args[5]);
                     if (world == null) {    // invalid world
-                        mb.localize("commands.fireworks.execute.world-not-found").send();
+                        mb.localize("commands.fireworks.execute.worldNotFound").send();
                         return;
                     }
                 } else if (!(sender instanceof Player)) {    // not player and no world provided
-                    mb.localize("commands.fireworks.execute.world-name").send();
+                    mb.localize("commands.fireworks.execute.worldName").send();
                     return;
                 }
 
@@ -191,7 +193,7 @@ public class MainCommand extends Command {
                 mb.localize("commands.fireworks.execute.started", scheduler.getId());
             }
         } else {
-            mb.localize("commands.no-permission");
+            mb.localize("commands.noPermission");
         }
         mb.send();
     }
@@ -199,7 +201,7 @@ public class MainCommand extends Command {
     private void reload(CommandSender sender) {
         MessageBuilder mb = this.ctx.message(sender);
         if (!sender.hasPermission(Permissions.CMD_FIREWORKS_RELOAD)) {
-            mb.localize("commands.no-permission");
+            mb.localize("commands.noPermission");
         } else {
             try {
                 PowerfulFireworks.getInstance().loadConfigurations();
@@ -216,7 +218,7 @@ public class MainCommand extends Command {
     private void check(CommandSender sender) {
         MessageBuilder mb = this.ctx.message(sender);
         if (!sender.hasPermission(Permissions.CMD_FIREWORKS_CHECK)) {
-            mb.localize("commands.no-permission");
+            mb.localize("commands.noPermission");
         } else {
             try {
                 DiagnosticReporter report = PowerfulFireworks.getInstance().checkConfigurations();
@@ -241,15 +243,15 @@ public class MainCommand extends Command {
      */
     private void script(CommandSender sender, String[] args) {
         if (!sender.hasPermission(Permissions.CMD_FIREWORKS_SCRIPT)) {
-            sender.sendMessage(Component.text("你没有权限执行这个命令", NamedTextColor.RED));
+            this.ctx.message(sender).localize("commands.noPermission").send();
             return;
         }
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(Component.text("脚本演出需要一个玩家坐标作为原点", NamedTextColor.RED));
+            this.ctx.message(sender).localize("commands.fireworks.script.playerOnly").send();
             return;
         }
         if (args.length < 3 || !args[1].equalsIgnoreCase("run")) {
-            sender.sendMessage(Component.text("用法：/fireworks script run <名字> [种子]", NamedTextColor.YELLOW));
+            this.ctx.message(sender).localize("commands.fireworks.script.usage").send();
             return;
         }
 
@@ -258,7 +260,9 @@ public class MainCommand extends Command {
             try {
                 seed = Long.parseLong(args[3]);
             } catch (NumberFormatException e) {
-                sender.sendMessage(Component.text("种子必须是整数：" + args[3], NamedTextColor.RED));
+                this.ctx.message(sender)
+                        .localize("commands.fireworks.script.badSeed", args[3])
+                        .send();
                 return;
             }
         }
@@ -266,7 +270,9 @@ public class MainCommand extends Command {
         PowerfulFireworks plugin = PowerfulFireworks.getInstance();
         CompiledScript compiled = plugin.getScripts().get(args[2]);
         if (compiled == null) {
-            sender.sendMessage(Component.text("找不到脚本 " + args[2], NamedTextColor.RED));
+            this.ctx.message(sender)
+                    .localize("commands.fireworks.script.notFound", args[2])
+                    .send();
             return;
         }
 
@@ -281,25 +287,35 @@ public class MainCommand extends Command {
             plugin.getRuntimeService().start(id, compiled,
                     new BukkitScriptHost(plugin, plugin.getSLF4JLogger(), origin, receivers), Map.of(), seed);
         } catch (RuntimeException e) {
-            sender.sendMessage(Component.text(
-                    "脚本 " + args[2] + " 启动失败：" + e.getMessage(), NamedTextColor.RED));
+            this.ctx.message(sender)
+                    .localize("commands.fireworks.script.failed", args[2], String.valueOf(e.getMessage()))
+                    .send();
             plugin.getSLF4JLogger().warn("脚本 {} 启动失败", args[2], e);
             return;
         }
 
-        sender.sendMessage(Component.text(
-                "已启动脚本 " + args[2] + (seed == null ? "" : "（seed " + seed + "）")
-                        + "，接收者 " + receivers.size() + " 人", NamedTextColor.GREEN));
+        if (seed == null) {
+            this.ctx.message(sender)
+                    .localize("commands.fireworks.script.started", args[2], String.valueOf(receivers.size()))
+                    .send();
+        } else {
+            this.ctx.message(sender)
+                    .localize("commands.fireworks.script.startedWithSeed",
+                            args[2], String.valueOf(seed), String.valueOf(receivers.size()))
+                    .send();
+        }
     }
 
     /** 停止所有正在跑的脚本演出。 */
     private void stop(CommandSender sender) {
         if (!sender.hasPermission(Permissions.CMD_FIREWORKS_STOP)) {
-            sender.sendMessage(Component.text("你没有权限执行这个命令", NamedTextColor.RED));
+            this.ctx.message(sender).localize("commands.noPermission").send();
             return;
         }
         int count = PowerfulFireworks.getInstance().getRuntimeService().stopAll();
-        sender.sendMessage(Component.text("已停止 " + count + " 个演出", NamedTextColor.GREEN));
+        this.ctx.message(sender)
+                .localize("commands.fireworks.stop.stopped", String.valueOf(count))
+                .send();
     }
 
     private void item(CommandSender sender, String[] args) {
@@ -308,9 +324,9 @@ public class MainCommand extends Command {
                 FireworkScheduler sched = PowerfulFireworks.getInstance().getSchedulers().get(args[1]);
                 MessageBuilder message = this.ctx.message(sender);
                 if (sched == null) {
-                    message.localize("commands.fireworks.scheduler-not-found", args[1]);
+                    message.localize("commands.fireworks.execute.schedulerNotFound", args[1]);
                 } else if (!sched.isAllowActivationByItems()) {
-                    message.localize("commands.fireworks.item.not-allowed");
+                    message.localize("commands.fireworks.item.notAllowed");
                 } else {
                     ItemStack item = sched.createItem();
                     player.getInventory().addItem(item);
@@ -329,7 +345,7 @@ public class MainCommand extends Command {
     public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
         TabBuilder builder = new TabBuilder();
         if (args.length == 1) {
-            builder.add(args[0], "help", "execute", "reload", "font", "toggle", "check");
+            builder.add(args[0], "help", "execute", "reload", "font", "toggle", "check", "item", "script", "stop");
         } else if (args.length == 2) {
             String a0 = args[0].toLowerCase(Locale.ROOT);
             String a1 = args[1];
@@ -337,6 +353,7 @@ public class MainCommand extends Command {
                 case "font" -> builder.add(a1, this.fontIdComp);
                 case "execute" -> builder.add(a1, this.fireworkComp);
                 case "item" -> builder.add(a1, this.fireworkItemComp);
+                case "script" -> builder.add(a1, "run");
             }
         }
 

@@ -23,7 +23,7 @@ public class TestCommand extends Command {
             final PowerfulFireworks pl = PowerfulFireworks.getInstance();
             if (!sender.hasPermission(Permissions.CMD_TEST)) {
                 pl.getContext().message(sender)
-                        .localize("commands.no-permission")
+                        .localize("commands.noPermission")
                         .send();
                 return true;
             }

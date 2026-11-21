@@ -18,6 +18,7 @@ import org.eu.pcraft.powerfulfireworks.commands.TestCommand;
 import org.eu.pcraft.powerfulfireworks.config.ConfigManager;
 import org.eu.pcraft.powerfulfireworks.config.DiagnosticReporter;
 import org.eu.pcraft.powerfulfireworks.config.MessagesConfigModule;
+import org.eu.pcraft.powerfulfireworks.config.MessagesLocalizations;
 import org.eu.pcraft.powerfulfireworks.config.PepperConfigModule;
 import org.eu.pcraft.powerfulfireworks.config.ValidationRules;
 import org.eu.pcraft.powerfulfireworks.hook.FireworkItemListener;
@@ -283,7 +284,9 @@ public final class PowerfulFireworks extends JavaPlugin {
 
     private void setupLocalizations() {
         try {
-            this.context.setLocalizations(new ConfigurationLocalizations(this.context.loadConfiguration("messages.yml")));
+            this.context.setLocalizations(new MessagesLocalizations(
+                    new ConfigurationLocalizations(this.context.loadConfiguration("messages.yml")),
+                    getSLF4JLogger()));
             this.context.setDefaultLocalizeMode(IAdventureLocalizations.LocalizeMode.MM);
 
             // 构建并设置前缀

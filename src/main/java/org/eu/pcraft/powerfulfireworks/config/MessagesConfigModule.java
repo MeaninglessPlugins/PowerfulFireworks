@@ -62,6 +62,12 @@ public class MessagesConfigModule {
 
             @ConfigPath("check")
             String check = "校验配置文件（只读，不会重载）";
+
+            @ConfigPath("script")
+            String script = "运行一个脚本演出";
+
+            @ConfigPath("stop")
+            String stop = "停止所有正在跑的演出";
         }
 
         @ConfigModel
@@ -134,6 +140,38 @@ public class MessagesConfigModule {
         }
 
         @ConfigModel
+        public static class ScriptCommand {
+
+            @ConfigPath("playerOnly")
+            String playerOnly = "<red>脚本演出需要一个玩家坐标作为原点</red>";
+
+            @ConfigPath("usage")
+            String usage = "<yellow>用法：/fireworks script run <名字> [种子]</yellow>";
+
+            @ConfigPath("badSeed")
+            String badSeed = "<red>种子必须是整数：%s</red>";
+
+            @ConfigPath("notFound")
+            String notFound = "<red>找不到脚本 %s</red>";
+
+            @ConfigPath("failed")
+            String failed = "<red>脚本 %s 启动失败：%s</red>";
+
+            @ConfigPath("started")
+            String started = "<green>已启动脚本 %s，接收者 %s 人</green>";
+
+            @ConfigPath("startedWithSeed")
+            String startedWithSeed = "<green>已启动脚本 %s（seed %s），接收者 %s 人</green>";
+        }
+
+        @ConfigModel
+        public static class StopCommand {
+
+            @ConfigPath("stopped")
+            String stopped = "<green>已停止 %s 个演出</green>";
+        }
+
+        @ConfigModel
         public static class FireworkCommands {
 
             @ConfigPath("help")
@@ -156,6 +194,12 @@ public class MessagesConfigModule {
 
             @ConfigPath("item")
             ItemCommand item = new ItemCommand();
+
+            @ConfigPath("script")
+            ScriptCommand script = new ScriptCommand();
+
+            @ConfigPath("stop")
+            StopCommand stop = new StopCommand();
         }
     }
 }
