@@ -82,7 +82,7 @@ dependencies {
     include 'org.yaml:snakeyaml:2.6'
     // 脚本引擎（Rhino）：只取 runtime，不含 shell/工具；重定位避免与其它插件带的版本打架
     // 脚本引擎（Rhino）：编译模式需要 1.8.0，1.7.14 在 Java 25 上编译生成器脚本会失败
-    include 'org.mozilla:rhino:1.8.0'
+    include 'org.mozilla:rhino:1.9.2'
 }
 
 bukkit {
@@ -122,7 +122,9 @@ shadowJar {
     relocate "org.bstats", "org.eu.pcraft.powerfulfireworks.bstats"
     // snakeyaml 只被内置配置框架使用，重定位避免和不同版本服务端自带的版本打架
     relocate "org.yaml.snakeyaml", "org.eu.pcraft.powerfulfireworks.libs.snakeyaml"
-    relocate "org.mozilla.javascript", "org.eu.pcraft.powerfulfireworks.libs.rhino"
+    // Rhino 故意不重定位：编译模式下 Codegen 把方法描述符当字符串常量存着
+    // （形如 "Lorg/mozilla/javascript/Context;I"），重定位只改类引用、不改这些字符串，
+    // 生成的类一加载就 NoClassDefFoundError。Paper 每个插件一个类加载器，不重定位也不会互相串。
     def dev = Boolean.parseBoolean(project.getProperties().get("dev").toString())
     println "Dev: ${dev}"
     if (!dev) {
