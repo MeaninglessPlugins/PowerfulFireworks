@@ -1,5 +1,6 @@
 package org.eu.pcraft.powerfulfireworks.script;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,14 +28,29 @@ public record AudienceSpec(
         /** 按原版规则：烟花看实体跟踪范围，粒子看 32/512 格。 */
         DEFAULT,
         RADIUS,
+        /** 某个世界里的所有玩家；{@code all()} 就是"发射点所在世界"。 */
         WORLD,
-        ALL,
         PLAYERS,
         NONE
     }
 
     public AudienceSpec {
-        names = names == null ? List.of() : List.copyOf(names);
+        List<String> cleaned = new ArrayList<>();
+        if (names != null) {
+            for (String name : names) {
+                String trimmed = name == null ? "" : name.trim();
+                if (trimmed.isEmpty()) {
+                    throw new IllegalArgumentException("观众名单里有空名字");
+                }
+                cleaned.add(trimmed);
+            }
+        }
+        names = List.copyOf(cleaned);
+        String trimmedWorld = world == null ? null : world.trim();
+        if (trimmedWorld != null && trimmedWorld.isEmpty()) {
+            throw new IllegalArgumentException("世界名不能为空");
+        }
+        world = trimmedWorld;
         if (kind == Kind.RADIUS && !(radius > 0 && radius <= MAX_RADIUS)) {
             throw new IllegalArgumentException("观众半径必须在 0 到 " + (int) MAX_RADIUS + " 之间，当前 " + radius);
         }
@@ -70,8 +86,9 @@ public record AudienceSpec(
         return new AudienceSpec(Kind.WORLD, 0, null, null, null, name, List.of());
     }
 
+    /** 全服：实体包不能跨世界，所以等价于"发射点所在世界的所有人"。 */
     public static AudienceSpec all() {
-        return new AudienceSpec(Kind.ALL, 0, null, null, null, null, List.of());
+        return world(null);
     }
 
     public static AudienceSpec players(List<String> names) {

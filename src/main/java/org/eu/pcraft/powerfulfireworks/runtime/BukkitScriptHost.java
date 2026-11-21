@@ -7,6 +7,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -40,6 +41,8 @@ public final class BukkitScriptHost implements ScriptHost {
 
     /** 烟花之间的随机水平偏移半径：避免同一发里几支火箭完全重叠。点集传 0，要精确落点。 */
     private static final double FIREWORK_JITTER = 0.75;
+    /** "点名但不在"的警告上限：剧本循环点名时不要刷屏。 */
+    private static final int MAX_WARNED_NAMES = 32;
 
     private final Plugin plugin;
     private final Logger logger;
@@ -51,11 +54,6 @@ public final class BukkitScriptHost implements ScriptHost {
         this.plugin = plugin;
         this.logger = logger;
         this.origin = origin.clone();
-    }
-
-    @Override
-    public ScriptHost child() {
-        return new BukkitScriptHost(plugin, logger, origin);
     }
 
     @Override
@@ -110,7 +108,7 @@ public final class BukkitScriptHost implements ScriptHost {
     private void emitFirework(FireworkRequest request, Location at, double jitter, AudienceSpec audience) {
         // 一次发射的观众只取一次：创建、爆炸、移除三个包必须发给同一批人，
         // 否则掉出范围的人会看到一支永远飞的火箭（客户端不模拟假实体自爆）。
-        List<Player> recipients = resolve(audience, at, false, true);
+        List<Player> recipients = fireworkRecipients(audience, at);
         if (recipients.isEmpty()) {
             return;
         }
@@ -139,7 +137,7 @@ public final class BukkitScriptHost implements ScriptHost {
         if (world == null) {
             return;
         }
-        List<Player> recipients = resolve(audience, point, request.force(), false);
+        List<Player> recipients = particleRecipients(audience, point, request.force());
         if (recipients.isEmpty()) {
             return;
         }
@@ -150,13 +148,31 @@ public final class BukkitScriptHost implements ScriptHost {
                 request.speed(), particleData(particle, request), request.force());
     }
 
+    private List<Player> fireworkRecipients(AudienceSpec spec, Location at) {
+        return recipients(spec, at, player -> {
+            Location loc = player.getLocation();
+            return AudienceRules.fireworkVisible(loc.getX() - at.getX(), loc.getZ() - at.getZ(),
+                    player.getViewDistance());
+        });
+    }
+
+    private List<Player> particleRecipients(AudienceSpec spec, Location at, boolean force) {
+        return recipients(spec, at, player -> {
+            Location loc = player.getLocation();
+            return AudienceRules.particleVisible(
+                    loc.getBlockX() + 0.5 - at.getX(),
+                    loc.getBlockY() + 0.5 - at.getY(),
+                    loc.getBlockZ() + 0.5 - at.getZ(), force);
+        });
+    }
+
     /**
      * 把观众规则解析成具体名单。
      *
-     * <p>{@code firework} 决定"默认规则"走哪一套：实体按水平 64 格（还要和玩家视距取小），
+     * <p>{@code vanilla} 只在 {@code DEFAULT} 时使用：实体按水平 64 格（还要和玩家视距取小），
      * 粒子按三维 32/512 格。显式的 {@code radius} 一律是三维球。
      */
-    private List<Player> resolve(AudienceSpec spec, Location at, boolean force, boolean firework) {
+    private List<Player> recipients(AudienceSpec spec, Location at, Predicate<Player> vanilla) {
         World world = at.getWorld();
         if (world == null) {
             return List.of();
@@ -164,10 +180,10 @@ public final class BukkitScriptHost implements ScriptHost {
         AudienceSpec actual = spec == null ? AudienceSpec.vanilla() : spec;
         return switch (actual.kind()) {
             case NONE -> List.of();
-            case ALL, WORLD -> playersOf(actual.world() == null ? world : Bukkit.getWorld(actual.world()));
+            case WORLD -> playersOf(actual.world() == null ? world : Bukkit.getWorld(actual.world()));
             case PLAYERS -> namedPlayers(world, actual);
             case RADIUS -> radiusPlayers(actual);
-            case DEFAULT -> defaultPlayers(world, at, force, firework);
+            case DEFAULT -> defaultPlayers(world, vanilla);
         };
     }
 
@@ -180,20 +196,23 @@ public final class BukkitScriptHost implements ScriptHost {
         for (String name : spec.names()) {
             Player player = Bukkit.getPlayerExact(name);
             if (player == null) {
-                if (warnedNames.add(name)) {
-                    logger.warn("观众名单里的玩家 {} 不在线，已跳过", name);
-                }
+                warnOnce(name, "观众名单里的玩家 {} 不在线，已跳过", name);
                 continue;
             }
             if (player.getWorld() != world) {
-                if (warnedNames.add(name + "@" + world.getName())) {
-                    logger.warn("观众 {} 不在发射所在的世界 {}，已跳过", name, world.getName());
-                }
+                warnOnce(name + "@" + world.getName(), "观众 {} 不在发射所在的世界 {}，已跳过", name, world.getName());
                 continue;
             }
             players.add(player);
         }
         return players;
+    }
+
+    private void warnOnce(String key, String message, Object... args) {
+        if (warnedNames.size() >= MAX_WARNED_NAMES || !warnedNames.add(key)) {
+            return;
+        }
+        logger.warn(message, args);
     }
 
     private List<Player> radiusPlayers(AudienceSpec spec) {
@@ -215,19 +234,10 @@ public final class BukkitScriptHost implements ScriptHost {
         return players;
     }
 
-    private List<Player> defaultPlayers(World world, Location at, boolean force, boolean firework) {
+    private List<Player> defaultPlayers(World world, Predicate<Player> vanilla) {
         List<Player> players = new ArrayList<>();
         for (Player player : world.getPlayers()) {
-            Location loc = player.getLocation();
-            boolean visible = firework
-                    ? AudienceRules.fireworkVisible(loc.getX() - at.getX(), loc.getZ() - at.getZ(),
-                            player.getViewDistance())
-                    // 原版从玩家脚下方块的中心量，不是玩家坐标
-                    : AudienceRules.particleVisible(
-                            loc.getBlockX() + 0.5 - at.getX(),
-                            loc.getBlockY() + 0.5 - at.getY(),
-                            loc.getBlockZ() + 0.5 - at.getZ(), force);
-            if (visible) {
+            if (vanilla.test(player)) {
                 players.add(player);
             }
         }

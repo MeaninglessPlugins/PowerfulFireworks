@@ -412,7 +412,8 @@ final class ScriptContextObject {
         return number;
     }
 
-    /** 读取颜色：支持单个字符串或字符串数组。 */    private static List<String> colorList(Scriptable spec, String name) {
+    /** 读取颜色：支持单个字符串或字符串数组。 */
+    private static List<String> colorList(Scriptable spec, String name) {
         List<String> colors = new ArrayList<>();
         Object raw = ScriptableObject.getProperty(spec, name);
         if (raw instanceof Scriptable list && list.getClassName().equals("Array")) {
@@ -515,7 +516,7 @@ final class ScriptContextObject {
                 audienceData(c, s, AudienceSpec.Kind.DEFAULT)));
 
         ScriptableObject.putProperty(audience, "all", function(scope, (c, s, t, args) ->
-                audienceData(c, s, AudienceSpec.Kind.ALL)));
+                audienceData(c, s, AudienceSpec.Kind.WORLD)));
 
         ScriptableObject.putProperty(audience, "none", function(scope, (c, s, t, args) ->
                 audienceData(c, s, AudienceSpec.Kind.NONE)));
@@ -585,7 +586,6 @@ final class ScriptContextObject {
         try {
             return switch (kind) {
                 case "default" -> AudienceSpec.vanilla();
-                case "all" -> AudienceSpec.all();
                 case "none" -> AudienceSpec.none();
                 case "world" -> AudienceSpec.world(stringProperty(data, "world"));
                 case "players" -> AudienceSpec.players(namesOf(data));

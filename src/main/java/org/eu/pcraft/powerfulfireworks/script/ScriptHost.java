@@ -17,13 +17,16 @@ public interface ScriptHost {
      *
      * <p>宿主负责把请求变成物品与实体包，脚本只描述"要什么"，不关心怎么发。
      * 参数已经在 {@link FireworkRequest} 的构造里校验过，宿主可以直接信任。
+     *
+     * <p>{@code audience} 为 {@code null} 时按原版规则挑人（烟花看实体跟踪范围），
+     * 非空时按 {@link AudienceSpec} 的规则挑；名单在发射那一刻解析。
      */
     void firework(FireworkRequest request, AudienceSpec audience);
 
     /**
      * 放一批粒子。
      *
-     * <p>与烟花平级：同样的原点、同样的接收者，只是走粒子包而不是实体包。
+     * <p>与烟花平级：同样的原点与观众规则，只是走粒子包而不是实体包。
      * 参数已经在 {@link ParticleRequest} 的构造里校验过，宿主可以直接信任。
      */
     void particle(ParticleRequest request, AudienceSpec audience);

@@ -239,8 +239,8 @@ public class MainCommand extends Command {
     /**
      * 运行一个脚本演出。
      *
-     * <p>原点取执行者当前位置，接收者是同世界、视距范围内的玩家——和随机烟花用的是同一套范围，
-     * 避免出现"看得见烟花的地方收不到包"。
+     * <p>原点取执行者当前位置；观众由每次发射按原版规则解析，脚本也能用 {@code ctx.audience.*}
+     * 显式指定。这里算的"预计接收者"只用于启动提示。
      */
     private void script(CommandSender sender, String[] args) {
         if (!sender.hasPermission(Permissions.CMD_FIREWORKS_SCRIPT)) {
