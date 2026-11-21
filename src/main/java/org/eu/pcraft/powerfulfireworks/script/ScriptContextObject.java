@@ -1,27 +1,27 @@
 package org.eu.pcraft.powerfulfireworks.script;
 
+import static org.eu.pcraft.powerfulfireworks.script.ScriptJs.function;
+import static org.eu.pcraft.powerfulfireworks.script.ScriptJs.join;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeSet;
 
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
-
-import org.mozilla.javascript.BaseFunction;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 
 /**
- * 脚本里的 {@code ctx} 对象。
+ * 脚本里的 {@code ctx}：把 Java 侧的能力包成脚本函数。
  *
- * <p>目前只有最基础的一组：{@code tick}、{@code params}、{@code log}、{@code warn}、
- * {@code wait}、{@code rand}。发射、演出、观众等有副作用的 API 等运行时骨架落地后再加。
+ * <p>请求解析在 {@link ScriptRequests}，观众构造与解析在 {@link ScriptAudience}，
+ * 这里只负责接线、文字点阵与参数编解码。
  */
 final class ScriptContextObject {
 
@@ -59,7 +59,7 @@ final class ScriptContextObject {
             if (args.length == 0 || !(args[0] instanceof Scriptable spec)) {
                 throw Context.reportRuntimeError("ctx.firework({...}) 需要一个对象参数");
             }
-            host.firework(parseFirework(spec), args.length > 1 ? parseAudience(args[1]) : null);
+            host.firework(ScriptRequests.firework(spec), args.length > 1 ? ScriptAudience.parse(args[1]) : null);
             return Undefined.instance;
         }));
 
@@ -67,7 +67,7 @@ final class ScriptContextObject {
             if (args.length == 0 || !(args[0] instanceof Scriptable spec)) {
                 throw Context.reportRuntimeError("ctx.particle({...}) 需要一个对象参数");
             }
-            host.particle(parseParticle(spec), args.length > 1 ? parseAudience(args[1]) : null);
+            host.particle(ScriptRequests.particle(spec), args.length > 1 ? ScriptAudience.parse(args[1]) : null);
             return Undefined.instance;
         }));
 
@@ -81,7 +81,8 @@ final class ScriptContextObject {
             if (!(args[1] instanceof Scriptable coords)) {
                 throw Context.reportRuntimeError("第二个参数必须是坐标数组，例如 [[0, 5, 0], [1, 5, 0]]");
             }
-            host.points(parsePointSet(spec, coords), args.length > 2 ? parseAudience(args[2]) : null);
+            host.points(ScriptRequests.pointSet(spec, coords),
+                    args.length > 2 ? ScriptAudience.parse(args[2]) : null);
             return Undefined.instance;
         }));
 
@@ -91,7 +92,6 @@ final class ScriptContextObject {
             }
             return textShape(host, c, s, spec);
         }));
-
 
         ScriptableObject.putProperty(ctx, "run", function(scope, (c, s, t, args) -> {
             RunHandle handle = starter.start(scriptId(args, "ctx.run(id, params) 需要脚本 id"), params(args));
@@ -118,7 +118,7 @@ final class ScriptContextObject {
         }));
 
         ScriptableObject.putProperty(ctx, "rand", randomObject(cx, scope, random));
-        ScriptableObject.putProperty(ctx, "audience", audienceObject(cx, scope));
+        ScriptableObject.putProperty(ctx, "audience", ScriptAudience.object(cx, scope));
         return ctx;
     }
 
@@ -130,17 +130,17 @@ final class ScriptContextObject {
      * 这样脚本可以决定每行用多少 tick、什么速度，甚至换粒子。
      */
     private static Scriptable textShape(ScriptHost host, Context cx, Scriptable scope, Scriptable spec) {
-        String content = requiredString(spec, "text");
-        String fontId = requiredString(spec, "font");
-        double size = numberProperty(spec, "size", 1);
-        int gap = (int) numberProperty(spec, "gap", 1);
+        String content = ScriptRequests.requiredString(spec, "text");
+        String fontId = ScriptRequests.requiredString(spec, "font");
+        double size = ScriptRequests.number(spec, "size", 1);
+        int gap = (int) ScriptRequests.number(spec, "gap", 1);
         if (size <= 0) {
             throw Context.reportRuntimeError("size 必须大于 0");
         }
         if (gap < 0) {
             throw Context.reportRuntimeError("gap 不能为负");
         }
-        if (booleanProperty(spec, "rotate", false)) {
+        if (ScriptRequests.bool(spec, "rotate", false)) {
             throw Context.reportRuntimeError("ctx.text 暂不支持 rotate（逐玩家朝向），请用 face 指定水平朝向");
         }
 
@@ -150,7 +150,7 @@ final class ScriptContextObject {
                     + String.join(" / ", new TreeSet<>(host.fonts())));
         }
 
-        int[] mods = faceMods(spec);
+        int[] mods = ScriptRequests.faceMods(spec);
         BitmapFont.CharBitmap bitmap = font.fromString(content, gap);
         List<BitmapFont.CharBitmap.Row> rows = bitmap.rows(size, mods[0], mods[1]);
 
@@ -173,34 +173,6 @@ final class ScriptContextObject {
         }
         ScriptableObject.putProperty(out, "rows", cx.newArray(scope, rowArray));
         return out;
-    }
-
-    /** 面朝方向 → x/z 分量；只接受四个水平朝向。 */
-    private static int[] faceMods(Scriptable spec) {
-        Object raw = ScriptableObject.getProperty(spec, "face");
-        String face = raw == Scriptable.NOT_FOUND || raw == Undefined.instance
-                ? "NORTH"
-                : Context.toString(raw).trim().toUpperCase(Locale.ROOT);
-        return switch (face) {
-            case "EAST" -> new int[]{1, 0};
-            case "WEST" -> new int[]{-1, 0};
-            case "SOUTH" -> new int[]{0, 1};
-            case "NORTH" -> new int[]{0, -1};
-            default -> throw Context.reportRuntimeError(
-                    "face 只支持水平朝向（EAST / WEST / NORTH / SOUTH），当前为 " + face);
-        };
-    }
-
-    private static String requiredString(Scriptable object, String name) {
-        Object value = ScriptableObject.getProperty(object, name);
-        if (value == Scriptable.NOT_FOUND || value == Undefined.instance) {
-            throw Context.reportRuntimeError(name + " 不能为空");
-        }
-        String text = Context.toString(value);
-        if (text.isEmpty()) {
-            throw Context.reportRuntimeError(name + " 不能为空");
-        }
-        return text;
     }
 
     private static String scriptId(Object[] args, String usage) {
@@ -297,360 +269,6 @@ final class ScriptContextObject {
         return String.valueOf(raw);
     }
 
-    /** 把脚本传来的对象转成纯数据的请求；字段缺失时用默认值，类型不对就报错。 */
-    private static FireworkRequest parseFirework(Scriptable spec) {
-        int count = (int) numberProperty(spec, "count", 1);
-        int power = (int) numberProperty(spec, "power", 2);
-        double velocity = numberProperty(spec, "velocity", 0);
-        double launchChance = numberProperty(spec, "launchChance", 0.1);
-        int fuse = (int) numberProperty(spec, "fuse", 40);
-        boolean trail = booleanProperty(spec, "trail", false);
-        boolean flicker = booleanProperty(spec, "flicker", false);
-
-        String type = "";
-        Object rawType = ScriptableObject.getProperty(spec, "type");
-        if (rawType instanceof String name) {
-            type = name.trim().toUpperCase(Locale.ROOT);
-        }
-
-        double[] offset = offsetOf(spec);
-        List<String> colors = colorList(spec, "colors");
-        List<String> fade = colorList(spec, "fade");
-
-        try {
-            return new FireworkRequest(count, colors, fade, type, power, trail, flicker, velocity,
-                    offset[0], offset[1], offset[2], launchChance, fuse);
-        } catch (IllegalArgumentException e) {
-            throw Context.reportRuntimeError(e.getMessage());
-        }
-    }
-
-    private static ParticleRequest parseParticle(Scriptable spec) {
-        Object rawParticle = ScriptableObject.getProperty(spec, "particle");
-        String particle = rawParticle instanceof String name ? name : null;
-
-        int count = (int) numberProperty(spec, "count", 1);
-        double speed = numberProperty(spec, "speed", 0);
-        double size = numberProperty(spec, "size", 1);
-        boolean force = booleanProperty(spec, "force", true);
-
-        String color = "#FFFFFF";
-        Object rawColor = ScriptableObject.getProperty(spec, "color");
-        if (rawColor instanceof String single) {
-            color = single;
-        }
-
-        String fade = "";
-        Object rawFade = ScriptableObject.getProperty(spec, "fade");
-        if (rawFade instanceof String single) {
-            fade = single;
-        }
-
-        double[] spread = spreadOf(spec);
-        double[] offset = offsetOf(spec);
-        try {
-            return new ParticleRequest(particle, count, spread[0], spread[1], spread[2],
-                    speed, size, color, fade, offset[0], offset[1], offset[2], force);
-        } catch (IllegalArgumentException e) {
-            throw Context.reportRuntimeError(e.getMessage());
-        }
-    }
-
-    private static PointSetRequest parsePointSet(Scriptable spec, Scriptable coords) {
-        if (!coords.getClassName().equals("Array")) {
-            throw Context.reportRuntimeError("坐标必须是一个数组");
-        }
-        int length = (int) Context.toNumber(ScriptableObject.getProperty(coords, "length"));
-        List<double[]> points = new ArrayList<>(Math.min(length, PointSetRequest.MAX_POINTS));
-        for (int i = 0; i < length; i++) {
-            points.add(pointOf(ScriptableObject.getProperty(coords, i), "第 " + (i + 1) + " 个坐标"));
-        }
-        try {
-            return new PointSetRequest(parseEmission(spec), points);
-        } catch (IllegalArgumentException e) {
-            throw Context.reportRuntimeError(e.getMessage());
-        }
-    }
-
-    /** 第一个参数既可以是粒子参数，也可以是烟花参数：有 particle 键就是粒子。 */
-    private static Emission parseEmission(Scriptable spec) {
-        Object particle = ScriptableObject.getProperty(spec, "particle");
-        return particle instanceof String ? parseParticle(spec) : parseFirework(spec);
-    }
-
-    /**
-     * 读一个坐标：数组必须正好三项，对象必须三个键都在。
-     *
-     * <p>这里比 offset 严格，因为少一个轴几乎一定是写错了，补 0 会让人以为写对了。
-     */
-    private static double[] pointOf(Object raw, String label) {
-        if (raw instanceof Scriptable array && array.getClassName().equals("Array")) {
-            int length = (int) Context.toNumber(ScriptableObject.getProperty(array, "length"));
-            if (length != 3) {
-                throw Context.reportRuntimeError(label + "必须是 [x, y, z]");
-            }
-            return new double[]{element(array, 0, null), element(array, 1, null), element(array, 2, null)};
-        }
-        if (raw instanceof Scriptable object) {
-            return new double[]{
-                    coordinate(object, "x", label),
-                    coordinate(object, "y", label),
-                    coordinate(object, "z", label)};
-        }
-        throw Context.reportRuntimeError(label + "必须是 [x, y, z] 或 {x, y, z}");
-    }
-
-    private static double coordinate(Scriptable object, String name, String label) {
-        Object value = ScriptableObject.getProperty(object, name);
-        if (value == Scriptable.NOT_FOUND || value == Undefined.instance) {
-            throw Context.reportRuntimeError(label + "缺少 " + name);
-        }
-        double number = Context.toNumber(value);
-        if (Double.isNaN(number) || Double.isInfinite(number)) {
-            throw Context.reportRuntimeError(label + "的 " + name + " 不是数字");
-        }
-        return number;
-    }
-
-    /** 读取颜色：支持单个字符串或字符串数组。 */
-    private static List<String> colorList(Scriptable spec, String name) {
-        List<String> colors = new ArrayList<>();
-        Object raw = ScriptableObject.getProperty(spec, name);
-        if (raw instanceof Scriptable list && list.getClassName().equals("Array")) {
-            int length = (int) Context.toNumber(ScriptableObject.getProperty(list, "length"));
-            for (int i = 0; i < length; i++) {
-                colors.add(requireColor(stringElement(list, i)));
-            }
-        } else if (raw instanceof String single) {
-            colors.add(requireColor(single));
-        }
-        return colors;
-    }
-
-    private static String requireColor(String color) {
-        if (!color.matches("#[0-9a-fA-F]{6}")) {
-            throw Context.reportRuntimeError("颜色必须是 #RRGGBB 形式，当前 " + color);
-        }
-        return color;
-    }
-
-    /**
-     * 读取粒子的散布半径。
-     *
-     * <p>写一个数字表示三个轴同值，写数组表示每个轴各一个值：
-     * {@code spread: 0.8} 与 {@code spread: [0.5, 0, 0.5]} 都合法。
-     */
-    private static double[] spreadOf(Scriptable spec) {
-        Object spread = ScriptableObject.getProperty(spec, "spread");
-        if (spread instanceof Scriptable s && s.getClassName().equals("Array")) {
-            return new double[]{element(s, 0, 0.0), element(s, 1, 0.0), element(s, 2, 0.0)};
-        }
-        double uniform = numberProperty(spec, "spread", 0);
-        return new double[]{uniform, uniform, uniform};
-    }
-
-    /**
-     * 读取 offset，支持 {@code [x, y, z]} 与 {@code {x, y, z}} 两种写法。
-     *
-     * <p>先按类名判断是不是数组：JS 的对象字面量同样是 Scriptable，
-     * 只用类型判断会把 {@code {x, y, z}} 当成数组去取下标 0。
-     */
-    private static double[] offsetOf(Scriptable spec) {
-        Object offset = ScriptableObject.getProperty(spec, "offset");
-        if (offset instanceof Scriptable s && s.getClassName().equals("Array")) {
-            return new double[]{element(s, 0, 0.0), element(s, 1, 0.0), element(s, 2, 0.0)};
-        }
-        if (offset instanceof Scriptable s) {
-            return new double[]{
-                    numberProperty(s, "x", 0),
-                    numberProperty(s, "y", 0),
-                    numberProperty(s, "z", 0)};
-        }
-        return new double[]{0, 0, 0};
-    }
-
-    private static boolean booleanProperty(Scriptable object, String name, boolean fallback) {
-        Object value = ScriptableObject.getProperty(object, name);
-        if (value == Scriptable.NOT_FOUND || value == Undefined.instance) {
-            return fallback;
-        }
-        return Context.toBoolean(value);
-    }
-
-    private static double numberProperty(Scriptable object, String name, double fallback) {
-        Object value = ScriptableObject.getProperty(object, name);
-        if (value == Scriptable.NOT_FOUND || value == Undefined.instance) {
-            return fallback;
-        }
-        double number = Context.toNumber(value);
-        if (Double.isNaN(number) || Double.isInfinite(number)) {
-            throw Context.reportRuntimeError(name + " 需要一个数字");
-        }
-        return number;
-    }
-
-    private static double element(Scriptable array, int index, Double fallback) {
-        Object value = ScriptableObject.getProperty(array, index);
-        if (value == Scriptable.NOT_FOUND || value == Undefined.instance) {
-            if (fallback == null) {
-                throw Context.reportRuntimeError("数组第 " + index + " 项缺失");
-            }
-            return fallback;
-        }
-        return Context.toNumber(value);
-    }
-
-    private static String stringElement(Scriptable array, int index) {
-        Object value = ScriptableObject.getProperty(array, index);
-        if (value == Scriptable.NOT_FOUND || value == Undefined.instance) {
-            throw Context.reportRuntimeError("数组第 " + index + " 项缺失");
-        }
-        return Context.toString(value);
-    }
-
-    /** 观众构造器：全部返回纯数据对象，真正的名字在发射时才解析。 */
-    private static Scriptable audienceObject(Context cx, Scriptable scope) {
-        Scriptable audience = cx.newObject(scope);
-
-        ScriptableObject.putProperty(audience, "default", function(scope, (c, s, t, args) ->
-                audienceData(c, s, AudienceSpec.Kind.DEFAULT)));
-
-        ScriptableObject.putProperty(audience, "all", function(scope, (c, s, t, args) ->
-                audienceData(c, s, AudienceSpec.Kind.WORLD)));
-
-        ScriptableObject.putProperty(audience, "none", function(scope, (c, s, t, args) ->
-                audienceData(c, s, AudienceSpec.Kind.NONE)));
-
-        ScriptableObject.putProperty(audience, "world", function(scope, (c, s, t, args) -> {
-            Scriptable data = audienceData(c, s, AudienceSpec.Kind.WORLD);
-            if (args.length > 0) {
-                if (!(args[0] instanceof String name) || name.isBlank()) {
-                    throw Context.reportRuntimeError("ctx.audience.world(名字) 需要一个世界名");
-                }
-                ScriptableObject.putProperty(data, "world", name.trim());
-            }
-            return data;
-        }));
-
-        ScriptableObject.putProperty(audience, "radius", function(scope, (c, s, t, args) -> {
-            double radius = numberArg(args, 0, "ctx.audience.radius(r, ...) 需要半径");
-            Scriptable data = audienceData(c, s, AudienceSpec.Kind.RADIUS);
-            ScriptableObject.putProperty(data, "radius", radius);
-            if (args.length > 1) {
-                double[] center = pointOf(args[1], "半径的中心");
-                ScriptableObject.putProperty(data, "x", center[0]);
-                ScriptableObject.putProperty(data, "y", center[1]);
-                ScriptableObject.putProperty(data, "z", center[2]);
-                String world = args[1] instanceof Scriptable object ? stringProperty(object, "world") : null;
-                if (world != null) {
-                    ScriptableObject.putProperty(data, "world", world);
-                }
-            }
-            return data;
-        }));
-
-        ScriptableObject.putProperty(audience, "players", function(scope, (c, s, t, args) -> {
-            if (args.length == 0 || !(args[0] instanceof Scriptable list)
-                    || !"Array".equals(list.getClassName())) {
-                throw Context.reportRuntimeError("ctx.audience.players([...]) 需要一个名字数组");
-            }
-            int length = (int) Context.toNumber(ScriptableObject.getProperty(list, "length"));
-            if (length == 0) {
-                throw Context.reportRuntimeError("ctx.audience.players([...]) 至少写一个名字");
-            }
-            Scriptable names = (Scriptable) c.newArray(s, length);
-            for (int i = 0; i < length; i++) {
-                ScriptableObject.putProperty(names, i, Context.toString(ScriptableObject.getProperty(list, i)));
-            }
-            Scriptable data = audienceData(c, s, AudienceSpec.Kind.PLAYERS);
-            ScriptableObject.putProperty(data, "names", names);
-            return data;
-        }));
-
-        return audience;
-    }
-
-    private static Scriptable audienceData(Context cx, Scriptable scope, AudienceSpec.Kind kind) {
-        Scriptable data = cx.newObject(scope);
-        ScriptableObject.putProperty(data, "kind", kind.name().toLowerCase(Locale.ROOT));
-        return data;
-    }
-
-    /** 把脚本构造的观众对象转成 {@link AudienceSpec}；没传时返回 null，表示用默认规则。 */
-    private static AudienceSpec parseAudience(Object raw) {
-        if (!(raw instanceof Scriptable data)) {
-            throw Context.reportRuntimeError("观众要用 ctx.audience.xxx() 构造，不能直接写 " + Context.toString(raw));
-        }
-        Object rawKind = ScriptableObject.getProperty(data, "kind");
-        String kind = rawKind instanceof String text ? text.trim().toLowerCase(Locale.ROOT) : "";
-        try {
-            return switch (kind) {
-                case "default" -> AudienceSpec.vanilla();
-                case "none" -> AudienceSpec.none();
-                case "world" -> AudienceSpec.world(stringProperty(data, "world"));
-                case "players" -> AudienceSpec.players(namesOf(data));
-                case "radius" -> radiusSpec(data);
-                default -> throw Context.reportRuntimeError("不认识的观众类型：" + kind);
-            };
-        } catch (IllegalArgumentException e) {
-            throw Context.reportRuntimeError(e.getMessage());
-        }
-    }
-
-    private static AudienceSpec radiusSpec(Scriptable data) {
-        double radius = numberProperty(data, "radius", -1);
-        if (radius < 0) {
-            throw Context.reportRuntimeError("ctx.audience.radius(r, ...) 需要半径");
-        }
-        boolean x = hasProperty(data, "x");
-        boolean y = hasProperty(data, "y");
-        boolean z = hasProperty(data, "z");
-        if (!x && !y && !z) {
-            return new AudienceSpec(AudienceSpec.Kind.RADIUS, radius, null, null, null,
-                    stringProperty(data, "world"), List.of());
-        }
-        if (!(x && y && z)) {
-            throw Context.reportRuntimeError("观众中心需要同时给出 x、y、z");
-        }
-        return new AudienceSpec(AudienceSpec.Kind.RADIUS, radius,
-                numberProperty(data, "x", 0), numberProperty(data, "y", 0), numberProperty(data, "z", 0),
-                stringProperty(data, "world"), List.of());
-    }
-
-    private static List<String> namesOf(Scriptable data) {
-        Object raw = ScriptableObject.getProperty(data, "names");
-        if (!(raw instanceof Scriptable list) || !"Array".equals(list.getClassName())) {
-            throw Context.reportRuntimeError("ctx.audience.players([...]) 需要一个名字数组");
-        }
-        int length = (int) Context.toNumber(ScriptableObject.getProperty(list, "length"));
-        List<String> names = new ArrayList<>(length);
-        for (int i = 0; i < length; i++) {
-            names.add(Context.toString(ScriptableObject.getProperty(list, i)));
-        }
-        return names;
-    }
-
-    private static double numberArg(Object[] args, int index, String message) {
-        if (args.length <= index) {
-            throw Context.reportRuntimeError(message);
-        }
-        double value = Context.toNumber(args[index]);
-        if (Double.isNaN(value) || Double.isInfinite(value)) {
-            throw Context.reportRuntimeError(message);
-        }
-        return value;
-    }
-
-    private static boolean hasProperty(Scriptable object, String name) {
-        Object value = ScriptableObject.getProperty(object, name);
-        return value != Scriptable.NOT_FOUND && value != Undefined.instance;
-    }
-
-    private static String stringProperty(Scriptable object, String name) {
-        Object value = ScriptableObject.getProperty(object, name);
-        return value instanceof String text ? text : null;
-    }
-
     private static Scriptable randomObject(Context cx, Scriptable scope, Random random) {
         Scriptable rand = cx.newObject(scope);
         ScriptableObject.putProperty(rand, "int", function(scope, (c, s, t, args) -> {
@@ -686,38 +304,5 @@ final class ScriptContextObject {
     /** 让脚本能读到最新 tick。 */
     static void setTick(Scriptable ctx, long tick) {
         ScriptableObject.putProperty(ctx, "tick", (double) tick);
-    }
-
-    private static String join(Object[] args) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < args.length; i++) {
-            if (i > 0) {
-                sb.append(' ');
-            }
-            sb.append(Context.toString(args[i]));
-        }
-        return sb.toString();
-    }
-
-    private static BaseFunction function(Scriptable scope, Fn body) {
-        BaseFunction fn = new BaseFunction() {
-            @Override
-            public Object call(Context cx, Scriptable s, Scriptable thisObj, Object[] args) {
-                return body.apply(cx, s, thisObj, args);
-            }
-
-            @Override
-            public String getFunctionName() {
-                return "";
-            }
-        };
-        fn.setParentScope(scope);
-        fn.setPrototype(ScriptableObject.getFunctionPrototype(scope));
-        return fn;
-    }
-
-    @FunctionalInterface
-    private interface Fn {
-        Object apply(Context cx, Scriptable scope, Scriptable thisObj, Object[] args);
     }
 }
