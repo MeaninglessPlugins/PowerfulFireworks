@@ -18,7 +18,7 @@ public interface ScriptHost {
      * <p>宿主负责把请求变成物品与实体包，脚本只描述"要什么"，不关心怎么发。
      * 参数已经在 {@link FireworkRequest} 的构造里校验过，宿主可以直接信任。
      */
-    void firework(FireworkRequest request);
+    void firework(FireworkRequest request, AudienceSpec audience);
 
     /**
      * 放一批粒子。
@@ -26,14 +26,14 @@ public interface ScriptHost {
      * <p>与烟花平级：同样的原点、同样的接收者，只是走粒子包而不是实体包。
      * 参数已经在 {@link ParticleRequest} 的构造里校验过，宿主可以直接信任。
      */
-    void particle(ParticleRequest request);
+    void particle(ParticleRequest request, AudienceSpec audience);
 
     /**
      * 在一组坐标上各放一次同一种效果。
      *
      * <p>点集与单次发射共用同一套参数，区别只在于"点从哪来"。
      */
-    void points(PointSetRequest request);
+    void points(PointSetRequest request, AudienceSpec audience);
 
     /** 普通日志。 */
     void log(String message);

@@ -16,6 +16,7 @@ import org.eu.pcraft.powerfulfireworks.PowerfulFireworks;
 import org.eu.pcraft.powerfulfireworks.config.DiagnosticReporter;
 import org.eu.pcraft.powerfulfireworks.runtime.BukkitScriptHost;
 import org.eu.pcraft.powerfulfireworks.script.CompiledScript;
+import org.eu.pcraft.powerfulfireworks.script.AudienceRules;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkScheduler;
 import org.eu.pcraft.powerfulfireworks.utils.scheduler.FireworkStartupConfig;
@@ -277,15 +278,20 @@ public class MainCommand extends Command {
         }
 
         Location origin = player.getLocation();
-        double max = Bukkit.getViewDistance() * 16.0;
-        List<Player> receivers = origin.getWorld().getPlayers().stream()
-                .filter(p -> p.getLocation().distanceSquared(origin) <= max * max)
-                .toList();
+        // 只用于"预计接收者"的提示：真正的观众在每次发射时按原版规则解析
+        long receivers = 0;
+        for (Player other : origin.getWorld().getPlayers()) {
+            Location loc = other.getLocation();
+            if (AudienceRules.fireworkVisible(loc.getX() - origin.getX(), loc.getZ() - origin.getZ(),
+                    other.getViewDistance())) {
+                receivers++;
+            }
+        }
 
         String id = args[2] + "#" + (++this.runSeq);
         try {
             plugin.getRuntimeService().start(id, compiled,
-                    new BukkitScriptHost(plugin, plugin.getSLF4JLogger(), origin, receivers), Map.of(), seed);
+                    new BukkitScriptHost(plugin, plugin.getSLF4JLogger(), origin), Map.of(), seed);
         } catch (RuntimeException e) {
             this.ctx.message(sender)
                     .localize("commands.fireworks.script.failed", args[2], String.valueOf(e.getMessage()))
@@ -296,12 +302,12 @@ public class MainCommand extends Command {
 
         if (seed == null) {
             this.ctx.message(sender)
-                    .localize("commands.fireworks.script.started", args[2], String.valueOf(receivers.size()))
+                    .localize("commands.fireworks.script.started", args[2], String.valueOf(receivers))
                     .send();
         } else {
             this.ctx.message(sender)
                     .localize("commands.fireworks.script.startedWithSeed",
-                            args[2], String.valueOf(seed), String.valueOf(receivers.size()))
+                            args[2], String.valueOf(seed), String.valueOf(receivers))
                     .send();
         }
     }

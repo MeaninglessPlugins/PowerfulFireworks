@@ -1,0 +1,101 @@
+package org.eu.pcraft.powerfulfireworks.script;
+
+import java.util.List;
+
+/**
+ * 一次发射"发给谁"的规则。
+ *
+ * <p>它只描述规则，不带任何玩家对象：真正的名单在发射那一刻由宿主解析，
+ * 所以进服、走开、改视距都会自然生效，dry-run 也不需要服务器。
+ */
+public record AudienceSpec(
+        Kind kind,
+        double radius,
+        Double centerX,
+        Double centerY,
+        Double centerZ,
+        String world,
+        List<String> names) {
+
+    /** 最大半径：再大就不如直接全服，也避免手滑写成天文数字。 */
+    public static final double MAX_RADIUS = 512;
+    /** 原版世界坐标的边界。 */
+    public static final double MAX_COORDINATE = 30_000_000;
+    public static final int MAX_NAMES = 256;
+
+    public enum Kind {
+        /** 按原版规则：烟花看实体跟踪范围，粒子看 32/512 格。 */
+        DEFAULT,
+        RADIUS,
+        WORLD,
+        ALL,
+        PLAYERS,
+        NONE
+    }
+
+    public AudienceSpec {
+        names = names == null ? List.of() : List.copyOf(names);
+        if (kind == Kind.RADIUS && !(radius > 0 && radius <= MAX_RADIUS)) {
+            throw new IllegalArgumentException("观众半径必须在 0 到 " + (int) MAX_RADIUS + " 之间，当前 " + radius);
+        }
+        for (Double value : new Double[]{centerX, centerY, centerZ}) {
+            if (value != null && Math.abs(value) > MAX_COORDINATE) {
+                throw new IllegalArgumentException("观众中心的坐标超出世界边界：" + value);
+            }
+        }
+        if (kind == Kind.PLAYERS) {
+            if (names.isEmpty()) {
+                throw new IllegalArgumentException("观众名单不能为空，至少写一个玩家名");
+            }
+            if (names.size() > MAX_NAMES) {
+                throw new IllegalArgumentException("观众名单最多 " + MAX_NAMES + " 个名字，当前 " + names.size());
+            }
+        }
+    }
+
+    /** 不传观众时的默认值：交给宿主按原版规则判断。 */
+    public static AudienceSpec vanilla() {
+        return new AudienceSpec(Kind.DEFAULT, 0, null, null, null, null, List.of());
+    }
+
+    public static AudienceSpec radius(double radius) {
+        return new AudienceSpec(Kind.RADIUS, radius, null, null, null, null, List.of());
+    }
+
+    public static AudienceSpec radius(double radius, double x, double y, double z) {
+        return new AudienceSpec(Kind.RADIUS, radius, x, y, z, null, List.of());
+    }
+
+    public static AudienceSpec world(String name) {
+        return new AudienceSpec(Kind.WORLD, 0, null, null, null, name, List.of());
+    }
+
+    public static AudienceSpec all() {
+        return new AudienceSpec(Kind.ALL, 0, null, null, null, null, List.of());
+    }
+
+    public static AudienceSpec players(List<String> names) {
+        return new AudienceSpec(Kind.PLAYERS, 0, null, null, null, null, names);
+    }
+
+    public static AudienceSpec none() {
+        return new AudienceSpec(Kind.NONE, 0, null, null, null, null, List.of());
+    }
+
+    /** 有没有显式指定中心；没有就用演出原点。 */
+    public boolean hasCenter() {
+        return centerX != null;
+    }
+
+    public double centerX(double fallback) {
+        return centerX == null ? fallback : centerX;
+    }
+
+    public double centerY(double fallback) {
+        return centerY == null ? fallback : centerY;
+    }
+
+    public double centerZ(double fallback) {
+        return centerZ == null ? fallback : centerZ;
+    }
+}
