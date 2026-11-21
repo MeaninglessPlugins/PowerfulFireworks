@@ -10,11 +10,9 @@ import java.util.*;
 
 class TextFireworkNode extends FireworkNode {
     protected boolean rotate = false;
-    protected String[] lines = new String[0];
     protected double size = 1;
     protected BlockFace face;
 
-    protected int total = 0;
     TextFirework firework;
 
     @Override
@@ -29,16 +27,8 @@ class TextFireworkNode extends FireworkNode {
         String f = (String) Verify.verifyNotNull(section.get("font"), "font");
         BitmapFont font = Verify.verifyNotNull(PowerfulFireworks.getInstance().getFonts().get(f), "font %s", f);
 
-        // precalculate lines
         String text = (String) Verify.verifyNotNull(section.get("text"), "text");
         int gap = ((Number) section.getOrDefault("gap", 1)).intValue();
-        this.lines = font.fromString(text, gap).chars();
-
-        // count total characters
-        this.total = 0;
-        for (String line : this.lines) {
-            this.total += line.length() - line.replace("1", "").length();
-        }
 
         // get face for no rotate
         this.face = BlockFace.valueOf((String) section.getOrDefault("face", "EAST"));

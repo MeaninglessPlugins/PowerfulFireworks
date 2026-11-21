@@ -10,9 +10,10 @@ import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 
 /**
- * 脚本对象 → 纯数据请求的解析：缺字段用默认值，类型不对就报错。
+ * 脚本对象 → 纯数据请求的解析：缺字段用默认值；数字按 JS 语义转换，
+ * 布尔按 JS 真值（字符串 {@code "false"} 也是 true）。
  *
- * <p>这一层是脚本与运行时之间唯一的"翻译"，所有校验都发生在请求构造之前，
+ * <p>这一层是脚本与运行时之间唯一的"翻译"：所有校验都在请求对象交给宿主之前完成，
  * 宿主拿到的对象可以直接信任。
  */
 final class ScriptRequests {
@@ -25,6 +26,7 @@ final class ScriptRequests {
         int power = (int) number(spec, "power", 2);
         double velocity = number(spec, "velocity", 0);
         double launchChance = number(spec, "launchChance", 0.1);
+        double explosionChance = number(spec, "explosionChance", 0.2);
         int fuse = (int) number(spec, "fuse", 40);
         boolean trail = bool(spec, "trail", false);
         boolean flicker = bool(spec, "flicker", false);
@@ -41,7 +43,7 @@ final class ScriptRequests {
 
         try {
             return new FireworkRequest(count, colors, fade, type, power, trail, flicker, velocity,
-                    offset[0], offset[1], offset[2], launchChance, fuse);
+                    offset[0], offset[1], offset[2], launchChance, explosionChance, fuse);
         } catch (IllegalArgumentException e) {
             throw Context.reportRuntimeError(e.getMessage());
         }
@@ -141,19 +143,12 @@ final class ScriptRequests {
         if (raw instanceof Scriptable list && list.getClassName().equals("Array")) {
             int length = (int) Context.toNumber(ScriptableObject.getProperty(list, "length"));
             for (int i = 0; i < length; i++) {
-                colors.add(color(stringElement(list, i)));
+                colors.add(stringElement(list, i));
             }
         } else if (raw instanceof String single) {
-            colors.add(color(single));
+            colors.add(single);
         }
         return colors;
-    }
-
-    static String color(String color) {
-        if (!color.matches("#[0-9a-fA-F]{6}")) {
-            throw Context.reportRuntimeError("颜色必须是 #RRGGBB 形式，当前 " + color);
-        }
-        return color;
     }
 
     /**
@@ -191,17 +186,20 @@ final class ScriptRequests {
         return new double[]{0, 0, 0};
     }
 
+    record Face(int xMod, int zMod) {
+    }
+
     /** 面朝方向 → x/z 分量；只接受四个水平朝向。 */
-    static int[] faceMods(Scriptable spec) {
+    static Face face(Scriptable spec) {
         Object raw = ScriptableObject.getProperty(spec, "face");
         String face = raw == Scriptable.NOT_FOUND || raw == Undefined.instance
                 ? "NORTH"
                 : Context.toString(raw).trim().toUpperCase(Locale.ROOT);
         return switch (face) {
-            case "EAST" -> new int[]{1, 0};
-            case "WEST" -> new int[]{-1, 0};
-            case "SOUTH" -> new int[]{0, 1};
-            case "NORTH" -> new int[]{0, -1};
+            case "EAST" -> new Face(1, 0);
+            case "WEST" -> new Face(-1, 0);
+            case "SOUTH" -> new Face(0, 1);
+            case "NORTH" -> new Face(0, -1);
             default -> throw Context.reportRuntimeError(
                     "face 只支持水平朝向（EAST / WEST / NORTH / SOUTH），当前为 " + face);
         };

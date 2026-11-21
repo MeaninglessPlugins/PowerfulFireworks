@@ -5,8 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Predicate;
-
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -20,7 +18,7 @@ import org.slf4j.Logger;
 /**
  * 运行中的脚本：活动表 + 每 tick 一个驱动任务。
  *
- * <p>只为"正在跑的脚本"服务，不碰计划、不碰配置。驱动任务在表空时立即取消，
+ * <p>只为"正在跑的脚本"服务，不参与 YAML 演出与配置加载。驱动任务在表空时立即取消，
  * 所以空闲时服务器上没有任何属于本插件的周期任务。
  */
 public final class RuntimeService {
@@ -33,6 +31,9 @@ public final class RuntimeService {
      */
     private static final int MAX_DEPTH = 8;
 
+    /** 同时运行的脚本上限。 */
+    private static final int MAX_RUNS = 64;
+
     /** 同一 tick 内最多推进几趟；一条 join 链在一个 tick 里全部结束也不会超过深度上限。 */
     private static final int MAX_PASSES_PER_TICK = MAX_DEPTH + 1;
 
@@ -42,8 +43,9 @@ public final class RuntimeService {
      * @param script  脚本 id，用于认出"同一个脚本又出现了"
      * @param parent  父运行的 id，顶层运行为 null
      * @param seed    随机种子；子运行的种子由父种子派生，所以一场演出可复现
+     * @param lineage 从根到自身的脚本 id 链，用于递归与深度检查
      */
-    private record Active(RunningScript run, String script, String parent, long seed) {
+    private record Active(RunningScript run, String script, String parent, long seed, List<String> lineage) {
     }
 
     private final Plugin plugin;
@@ -53,24 +55,13 @@ public final class RuntimeService {
     private BukkitTask driver;
     private long seedCounter;
     private long childCounter;
+    /** 每次 {@link #stopAll()} 自增一次，宿主用它判断飞行中的爆炸是否已经作废。 */
+    private long stopGeneration;
 
     public RuntimeService(Plugin plugin, Logger logger, Function<String, CompiledScript> registry) {
         this.plugin = plugin;
         this.logger = logger;
         this.registry = registry;
-    }
-
-    /**
-     * 启动一个脚本。
-     *
-     * @param id      活动表里的唯一名字，调用方负责保证唯一
-     * @param script  已编译的脚本
-     * @param host    宿主，负责接收发射请求与日志
-     * @param params  参数，传 null 表示空
-     * @return 实际登记进活动表的运行
-     */
-    public RunningScript start(String id, CompiledScript script, ScriptHost host, Map<String, Object> params) {
-        return start(id, script, host, params, null);
     }
 
     /**
@@ -80,17 +71,21 @@ public final class RuntimeService {
      */
     public RunningScript start(String id, CompiledScript script, ScriptHost host,
                                Map<String, Object> params, Long seed) {
-        return startRun(null, id, script.id(), script, host, params, seed);
+        if (runs.size() >= MAX_RUNS) {
+            throw new IllegalStateException("同时运行的脚本已达上限 " + MAX_RUNS);
+        }
+        return startRun(null, id, script.id(), script, host, params, seed, List.of(script.id()));
     }
 
     private RunningScript startRun(String parentId, String id, String scriptId, CompiledScript script,
-                                   ScriptHost host, Map<String, Object> params, Long seed) {
+                                   ScriptHost host, Map<String, Object> params, Long seed,
+                                   List<String> lineage) {
         if (runs.containsKey(id)) {
             throw new IllegalArgumentException("运行 " + id + " 已经在跑");
         }
         long actualSeed = seed != null ? seed : ++seedCounter * 0x9E3779B97F4A7C15L + System.nanoTime();
         RunningScript run = script.start(host, childStarter(id, host), params, actualSeed);
-        runs.put(id, new Active(run, scriptId, parentId, actualSeed));
+        runs.put(id, new Active(run, scriptId, parentId, actualSeed, lineage));
         ensureDriver();
         return run;
     }
@@ -107,15 +102,25 @@ public final class RuntimeService {
             logger.warn("脚本 {} 调用了不存在的脚本 {}", parentId, scriptId);
             return null;
         }
-        if (!mayStart(parentId, scriptId)) {
+        Active parent = runs.get(parentId);
+        if (parent == null) {
+            logger.warn("脚本 {} 的父运行已经结束，拒绝启动 {}", parentId, scriptId);
+            return null;
+        }
+        if (runs.size() >= MAX_RUNS) {
+            logger.warn("同时运行的脚本已达上限 {}，拒绝启动 {}", MAX_RUNS, scriptId);
+            return null;
+        }
+        if (!mayStart(parent, scriptId)) {
             return null;
         }
         long index = ++childCounter;
         // 子种子由父种子与序号派生：给父一个种子，整条调用链就都确定了
-        Active parent = runs.get(parentId);
-        long childSeed = (parent == null ? 0L : parent.seed()) * 0x9E3779B97F4A7C15L + index;
+        long childSeed = parent.seed() * 0x9E3779B97F4A7C15L + index;
         String childId = parentId + "/" + scriptId + "#" + index;
-        return startRun(parentId, childId, scriptId, script, parentHost.child(), params, childSeed);
+        List<String> lineage = new ArrayList<>(parent.lineage());
+        lineage.add(scriptId);
+        return startRun(parentId, childId, scriptId, script, parentHost.child(), params, childSeed, lineage);
     }
 
     /**
@@ -124,23 +129,14 @@ public final class RuntimeService {
      * <p>递归的判断依据是脚本 id 而不是运行 id：A 调用 A 时两次运行的 id 不同，
      * 但如果脚本相同，这一层就一定不会自己结束。
      */
-    private boolean mayStart(String parentId, String scriptId) {
-        String cursor = parentId;
-        int depth = 0;
-        while (cursor != null) {
-            Active active = runs.get(cursor);
-            if (active == null) {
-                break;
-            }
-            if (scriptId.equals(active.script())) {
-                logger.warn("脚本 {} 调用 {} 会形成递归，已拒绝", parentId, scriptId);
-                return false;
-            }
-            cursor = active.parent();
-            if (++depth > MAX_DEPTH) {
-                logger.warn("脚本 {} 的调用链超过 {} 层，已拒绝继续调用 {}", parentId, MAX_DEPTH, scriptId);
-                return false;
-            }
+    private boolean mayStart(Active parent, String scriptId) {
+        if (parent.lineage().contains(scriptId)) {
+            logger.warn("脚本 {} 调用 {} 会形成递归，已拒绝", parent.run().id(), scriptId);
+            return false;
+        }
+        if (parent.lineage().size() >= MAX_DEPTH) {
+            logger.warn("脚本 {} 的调用链超过 {} 层，已拒绝继续调用 {}", parent.run().id(), MAX_DEPTH, scriptId);
+            return false;
         }
         return true;
     }
@@ -161,21 +157,21 @@ public final class RuntimeService {
         return true;
     }
 
-    /** @return 被取消的运行数量 */
-    public int stopAll() {
-        return stopWhere(id -> true);
+    /** @return 当前停止代数；宿主在排期爆炸时捕获它 */
+    public long stopGeneration() {
+        return stopGeneration;
     }
 
-    private int stopWhere(Predicate<String> filter) {
-        List<String> targets = new ArrayList<>();
-        for (String id : runs.keySet()) {
-            if (filter.test(id)) {
-                targets.add(id);
-            }
+    /** @return 被取消的运行数量 */
+    public int stopAll() {
+        stopGeneration++;
+        int count = 0;
+        for (String id : new ArrayList<>(runs.keySet())) {
+            cancel(id);
+            count++;
         }
-        targets.forEach(this::cancel);
         stopDriverIfIdle();
-        return targets.size();
+        return count;
     }
 
     private void cancel(String id) {

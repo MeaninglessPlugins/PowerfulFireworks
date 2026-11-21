@@ -25,6 +25,7 @@ final class ScriptJs {
 
             @Override
             public String getFunctionName() {
+                // 不把 Java 合成类名暴露给脚本的堆栈与日志
                 return "";
             }
         };

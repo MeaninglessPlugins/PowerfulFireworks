@@ -8,7 +8,6 @@ import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
  * 脚本运行时对外暴露的最小宿主接口。
  *
  * <p>这一层故意做得很窄：脚本只能通过它说话，不能直接拿到插件、Bukkit 或任何 Java 对象。
- * 后续会把"发射 / 演出 / 声音"等有副作用的动作加到这里。
  */
 public interface ScriptHost {
 
@@ -56,6 +55,10 @@ public interface ScriptHost {
     /** 已装载的字体 id，用于把"没有这个字体"报得具体一点。 */
     default Set<String> fonts() {
         return Set.of();
+    }
+
+    /** 绑定本次运行的随机种子。 */
+    default void seed(long seed) {
     }
 
     /**

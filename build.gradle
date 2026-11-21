@@ -80,8 +80,7 @@ dependencies {
     include 'cn.afternode.commons:bukkit:2.7.1'
     // 内置配置框架的 YAML 引擎；重定位后与各版本服务端自带的 snakeyaml 互不影响
     include 'org.yaml:snakeyaml:2.6'
-    // 脚本引擎（Rhino）：只取 runtime，不含 shell/工具；重定位避免与其它插件带的版本打架
-    // 脚本引擎（Rhino）：编译模式需要 1.8.0，1.7.14 在 Java 25 上编译生成器脚本会失败
+    // 脚本引擎（Rhino）：只取 runtime；编译模式需要 1.8.0 起，1.7.14 在 Java 25 上编生成器脚本会失败
     include 'org.mozilla:rhino:1.9.2'
 }
 

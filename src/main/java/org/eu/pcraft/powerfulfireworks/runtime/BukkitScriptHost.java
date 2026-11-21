@@ -29,6 +29,7 @@ import org.eu.pcraft.powerfulfireworks.script.PointSetRequest;
 import org.eu.pcraft.powerfulfireworks.script.ScriptHost;
 import org.eu.pcraft.powerfulfireworks.utils.BitmapFont;
 import org.eu.pcraft.powerfulfireworks.utils.FireworkUtil;
+import org.eu.pcraft.powerfulfireworks.utils.FlightUtil;
 import org.slf4j.Logger;
 
 /**
@@ -41,19 +42,30 @@ public final class BukkitScriptHost implements ScriptHost {
 
     /** 烟花之间的随机水平偏移半径：避免同一发里几支火箭完全重叠。点集传 0，要精确落点。 */
     private static final double FIREWORK_JITTER = 0.75;
-    /** "点名但不在"的警告上限：剧本循环点名时不要刷屏。 */
-    private static final int MAX_WARNED_NAMES = 32;
+    /** 每个宿主最多记住的告警 key 数：避免循环点名或反复发射时刷屏。 */
+    private static final int MAX_WARN_KEYS = 32;
 
     private final Plugin plugin;
     private final Logger logger;
     private final Location origin;
-    private final Random random = new Random();
-    private final Set<String> warnedNames = new HashSet<>();
+    private Random random = new Random();
+    private final Set<String> warnedKeys = new HashSet<>();
+    private boolean warnedTooMany;
 
     public BukkitScriptHost(Plugin plugin, Logger logger, Location origin) {
         this.plugin = plugin;
         this.logger = logger;
         this.origin = origin.clone();
+    }
+
+    @Override
+    public void seed(long seed) {
+        this.random = new Random(seed);
+    }
+
+    @Override
+    public ScriptHost child() {
+        return new BukkitScriptHost(plugin, logger, origin);
     }
 
     @Override
@@ -113,22 +125,64 @@ public final class BukkitScriptHost implements ScriptHost {
             return;
         }
         Location base = at.clone().add(request.offsetX(), request.offsetY(), request.offsetZ());
+        warnIfFlightExceedsVisibleRange(request, base, recipients);
         for (int i = 0; i < request.count(); i++) {
             Location point = base.clone().add(jitter(jitter), 0, jitter(jitter));
             FireworkUtil.CreatedFirework created = FireworkUtil.broadcastFireworkCreate(
                     recipients, createRocket(request), point,
-                    request.launchChance(), 0, request.velocity(), 0);
-            scheduleExplosion(created.id(), request.fuse(), recipients);
+                    request.launchChance(), random, 0, request.velocity(), 0);
+            scheduleExplosion(created.id(), request.fuse(), recipients,
+                    created.silent(), request.explosionChance());
         }
+    }
+
+    /**
+     * 可见性由脚本负责：这里不裁剪 fuse，只在 fuse 超过"观众还能看见"的上限时告警一次。
+     *
+     * <p>火箭是纯客户端假实体，只渲染 64 格以内；超出后火箭会中途消失，爆炸发生在视野外。
+     * 上限直接复用 {@code FlightUtil.clampFlyTime}，与 YAML 节点的裁剪是同一套几何：
+     * 超过上限不代表爆炸一定看不见，而是已经进入会被裁剪的区间。
+     * 是否可接受交给脚本作者判断（例如允许远处的观众看不到），所以只提示、不改变行为。
+     */
+    private void warnIfFlightExceedsVisibleRange(FireworkRequest request, Location at, List<Player> recipients) {
+        int visibleFuse = FlightUtil.clampFlyTime(request.fuse(), at, recipients, request.velocity());
+        if (visibleFuse >= request.fuse()) {
+            return;
+        }
+        World world = at.getWorld();
+        warnOnce("visibility:" + request.fuse() + ":" + request.velocity(),
+                "脚本在 {} ({}, {}, {}) 发射了 fuse={} tick、velocity={} 的烟花：按当前观众位置，"
+                        + "安全可见上限约 {} tick（客户端 64 格渲染上限，已留 8 格余量）。"
+                        + "超出后火箭可能中途消失、爆炸落在视野外；可见性由脚本负责，请调小 fuse 或 velocity。",
+                world == null ? "?" : world.getName(),
+                at.getBlockX(), at.getBlockY(), at.getBlockZ(),
+                request.fuse(), request.velocity(), visibleFuse);
     }
 
     /**
      * 假实体自己不会爆：服务端不 tick 它，客户端也不会替它触发自爆。
      * 不排这个任务的话，火箭会一直飞、实体一直留着。
      */
-    private void scheduleExplosion(int id, int fuse, List<Player> recipients) {
+    private void scheduleExplosion(int id, int fuse, List<Player> recipients,
+                                   boolean createSilent, double explosionChance) {
+        long generation = stopGeneration();
         plugin.getServer().getScheduler().runTaskLater(plugin,
-                () -> FireworkUtil.broadcastFireworkExplosion(recipients, 1.0, id), fuse);
+                () -> {
+                    if (stopGeneration() != generation) {
+                        // 演出在飞行途中被停掉：只清实体，不补爆炸
+                        FireworkUtil.broadcastFireworkRemove(recipients, id);
+                        return;
+                    }
+                    FireworkUtil.broadcastFireworkExplosion(recipients, explosionChance, random,
+                            new boolean[]{createSilent}, id);
+                }, fuse);
+    }
+
+    /** 当前停止代数；没有 RuntimeService（测试或独立宿主）时恒为 -1。 */
+    private long stopGeneration() {
+        return plugin instanceof PowerfulFireworks fireworks && fireworks.getRuntimeService() != null
+                ? fireworks.getRuntimeService().stopGeneration()
+                : -1L;
     }
 
     private void emitParticle(ParticleRequest request, Location at, AudienceSpec audience) {
@@ -209,20 +263,27 @@ public final class BukkitScriptHost implements ScriptHost {
     }
 
     private void warnOnce(String key, String message, Object... args) {
-        if (warnedNames.size() >= MAX_WARNED_NAMES || !warnedNames.add(key)) {
+        if (warnedKeys.size() >= MAX_WARN_KEYS) {
+            if (!warnedTooMany) {
+                warnedTooMany = true;
+                logger.warn("脚本告警数量已达上限 {} 条，后续告警不再显示", MAX_WARN_KEYS);
+            }
+            return;
+        }
+        if (!warnedKeys.add(key)) {
             return;
         }
         logger.warn(message, args);
     }
 
     private List<Player> radiusPlayers(AudienceSpec spec) {
-        World world = spec.world() == null ? origin.getWorld() : Bukkit.getWorld(spec.world());
+        World world = origin.getWorld();
         if (world == null) {
             return List.of();
         }
-        double centerX = spec.centerX(origin.getX());
-        double centerY = spec.centerY(origin.getY());
-        double centerZ = spec.centerZ(origin.getZ());
+        double centerX = origin.getX() + spec.centerX(0);
+        double centerY = origin.getY() + spec.centerY(0);
+        double centerZ = origin.getZ() + spec.centerZ(0);
         List<Player> players = new ArrayList<>();
         for (Player player : world.getPlayers()) {
             Location at = player.getLocation();

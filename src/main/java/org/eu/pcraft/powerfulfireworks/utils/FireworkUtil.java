@@ -78,7 +78,8 @@ public final class FireworkUtil {
      * @return 实体 id 与创建时的静音状态
      */
     public static CreatedFirework broadcastFireworkCreate(Collection<Player> targets, ItemStack item, Location location, double launchChance) {
-        return broadcastFireworkCreate(targets, item, location, launchChance, 0.0, 0.0, 0.0);
+        return broadcastFireworkCreate(targets, item, location, launchChance,
+                ThreadLocalRandom.current(), 0.0, 0.0, 0.0);
     }
 
     /**
@@ -95,6 +96,14 @@ public final class FireworkUtil {
      */
     public static CreatedFirework broadcastFireworkCreate(Collection<Player> targets, ItemStack item, Location location,
                                                           double launchChance, double vx, double vy, double vz) {
+        return broadcastFireworkCreate(targets, item, location, launchChance,
+                ThreadLocalRandom.current(), vx, vy, vz);
+    }
+
+    /** 使用指定的随机源，供脚本按 seed 复现。 */
+    public static CreatedFirework broadcastFireworkCreate(Collection<Player> targets, ItemStack item, Location location,
+                                                          double launchChance, Random random,
+                                                          double vx, double vy, double vz) {
         if (item.getType() != Material.FIREWORK_ROCKET)
             throw new IllegalArgumentException("Item is not a firework rocket");
         if (!item.hasItemMeta())
@@ -107,7 +116,7 @@ public final class FireworkUtil {
         // prepare packets
         final int id = provider.allocateEntityId();
         NMSAddEntityPacket add = provider.createAddFireworkEntityPacket(id, UUID.randomUUID(), location, vx, vy, vz);
-        boolean launchSilent = ThreadLocalRandom.current().nextDouble() >= launchChance;
+        boolean launchSilent = random.nextDouble() >= launchChance;
         NMSEntityDataPacket data = provider.createFireworkEntityDataPacket(id, item, launchSilent);
 
         for (Player target : targets) {
@@ -124,7 +133,7 @@ public final class FireworkUtil {
      * @param firework target firework entities
      */
     public static void broadcastFireworkExplosion(Collection<Player> targets, double explosionChance, int... firework) {
-        broadcastFireworkExplosion(targets, explosionChance, null, firework);
+        broadcastFireworkExplosion(targets, explosionChance, ThreadLocalRandom.current(), null, firework);
     }
 
     /**
@@ -135,6 +144,12 @@ public final class FireworkUtil {
      */
     public static void broadcastFireworkExplosion(Collection<Player> targets, double explosionChance,
                                                   boolean[] createSilent, int... firework) {
+        broadcastFireworkExplosion(targets, explosionChance, ThreadLocalRandom.current(), createSilent, firework);
+    }
+
+    /** 使用指定的随机源，供脚本按 seed 复现。 */
+    public static void broadcastFireworkExplosion(Collection<Player> targets, double explosionChance, Random random,
+                                                  boolean[] createSilent, int... firework) {
         if (firework.length == 0)
             return;
         if (createSilent != null && createSilent.length != firework.length)
@@ -142,7 +157,6 @@ public final class FireworkUtil {
                     + createSilent.length + " vs " + firework.length);
 
         NMSProvider provider = PowerfulFireworks.getInstance().getNms();
-        ThreadLocalRandom rd = ThreadLocalRandom.current();
 
         if (firework.length == 1) {
             // prepare event packets
@@ -150,7 +164,7 @@ public final class FireworkUtil {
             NMSRemoveEntityPacket remove = provider.createRemoveEntityPacket(firework);
             // 爆炸声取决于引爆时的静音标记，发射声早就播完了，改它只影响这一下；
             // 和创建时一样就不必再发一遍
-            boolean explosionSilent = rd.nextDouble() >= explosionChance;
+            boolean explosionSilent = random.nextDouble() >= explosionChance;
             NMSEntityDataPacket silent = createSilent == null || createSilent[0] != explosionSilent
                     ? provider.createSilentEntityDataPacket(firework[0], explosionSilent)
                     : null;
@@ -165,7 +179,7 @@ public final class FireworkUtil {
             List<NMSEntityDataPacket> silentPackets = new ArrayList<>();
             List<NMSEntityEventPacket> events = new ArrayList<>();
             for (int i = 0; i < firework.length; i++) {
-                boolean explosionSilent = rd.nextDouble() >= explosionChance;
+                boolean explosionSilent = random.nextDouble() >= explosionChance;
                 NMSEntityDataPacket silent = createSilent == null || createSilent[i] != explosionSilent
                         ? provider.createSilentEntityDataPacket(firework[i], explosionSilent)
                         : null;
@@ -182,6 +196,22 @@ public final class FireworkUtil {
                 }
                 provider.sendRemoveEntity(target, remove);
             }
+        }
+    }
+
+    /**
+     * 只移除假实体，不触发爆炸：演出被停止后，已经发射的火箭用它清掉。
+     *
+     * <p>客户端不会自己回收这些实体；只取消爆炸任务而不发这个包，会留下一直飞的火箭。
+     */
+    public static void broadcastFireworkRemove(Collection<Player> targets, int... firework) {
+        if (firework.length == 0 || targets.isEmpty()) {
+            return;
+        }
+        NMSProvider provider = PowerfulFireworks.getInstance().getNms();
+        NMSRemoveEntityPacket remove = provider.createRemoveEntityPacket(firework);
+        for (Player target : targets) {
+            provider.sendRemoveEntity(target, remove);
         }
     }
 

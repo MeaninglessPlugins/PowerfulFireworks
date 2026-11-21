@@ -23,9 +23,9 @@ import org.mozilla.javascript.Undefined;
  * <p>请求解析在 {@link ScriptRequests}，观众构造与解析在 {@link ScriptAudience}，
  * 这里只负责接线、文字点阵与参数编解码。
  */
-final class ScriptContextObject {
+final class ScriptContextFactory {
 
-    private ScriptContextObject() {
+    private ScriptContextFactory() {
     }
 
     static Scriptable create(Context cx, Scriptable scope, ScriptHost host, RunStarter starter,
@@ -45,8 +45,8 @@ final class ScriptContextObject {
 
         ScriptableObject.putProperty(ctx, "wait", function(scope, (c, s, t, args) -> {
             double ticks = args.length == 0 ? 1 : Context.toNumber(args[0]);
-            if (Double.isNaN(ticks) || ticks < 0) {
-                throw Context.reportRuntimeError("ctx.wait(n) 需要非负数字");
+            if (!Double.isFinite(ticks) || ticks < 1) {
+                throw Context.reportRuntimeError("ctx.wait(n) 需要正的 tick 数");
             }
             // 返回对象而不是数字：yield 出来的值要能区分种类（将来还会有发射、演出指令），
             // 用 { wait: n } 这样的标签比裸数字好扩展。
@@ -112,9 +112,7 @@ final class ScriptContextObject {
                 throw Context.reportRuntimeError("没有脚本 " + id
                         + "，或它不能被当前运行调用（递归、层级过深或已被停掉）");
             }
-            Scriptable out = c.newObject(s);
-            ScriptableObject.putProperty(out, "id", id);
-            return out;
+            return Undefined.instance;
         }));
 
         ScriptableObject.putProperty(ctx, "rand", randomObject(cx, scope, random));
@@ -150,9 +148,9 @@ final class ScriptContextObject {
                     + String.join(" / ", new TreeSet<>(host.fonts())));
         }
 
-        int[] mods = ScriptRequests.faceMods(spec);
+        ScriptRequests.Face face = ScriptRequests.face(spec);
         BitmapFont.CharBitmap bitmap = font.fromString(content, gap);
-        List<BitmapFont.CharBitmap.Row> rows = bitmap.rows(size, mods[0], mods[1]);
+        List<BitmapFont.CharBitmap.Row> rows = bitmap.rows(size, face.xMod(), face.zMod());
 
         Scriptable out = cx.newObject(scope);
         ScriptableObject.putProperty(out, "width", bitmap.width());

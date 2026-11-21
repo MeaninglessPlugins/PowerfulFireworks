@@ -15,8 +15,8 @@ import org.mozilla.javascript.Undefined;
  * {@code ctx.audience.*} 的构造器与反向解析。
  *
  * <p>脚本侧拿到的是纯数据对象（{@code {kind, radius, x, y, z, world, names}}），
- * 没有任何玩家引用：真正的名单在发射那一刻由宿主解析，所以进服、走开、改视距都会自然生效，
- * dry-run 也不需要服务器。
+ * 没有任何玩家引用：真正的名单在发射那一刻由宿主解析，所以进服、走开、改视距都会自然生效；
+ * 构造这些规则本身不需要服务器。
  */
 final class ScriptAudience {
 
@@ -55,10 +55,6 @@ final class ScriptAudience {
                 ScriptableObject.putProperty(out, "x", center[0]);
                 ScriptableObject.putProperty(out, "y", center[1]);
                 ScriptableObject.putProperty(out, "z", center[2]);
-                String world = args[1] instanceof Scriptable obj ? stringProperty(obj, "world") : null;
-                if (world != null) {
-                    ScriptableObject.putProperty(out, "world", world);
-                }
             }
             return out;
         }));

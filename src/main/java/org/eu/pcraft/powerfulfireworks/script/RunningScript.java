@@ -15,6 +15,7 @@ public final class RunningScript implements RunHandle {
 
     private static final int MAX_STEPS_PER_TICK = 64;
     private static final long TICK_BUDGET = 1_000_000L;
+    private static final long MAX_WAIT = 24_000L;
 
     private final String id;
     private final Scriptable scope;
@@ -40,18 +41,15 @@ public final class RunningScript implements RunHandle {
 
     static RunningScript create(Context cx, String id, Scriptable scope, Scriptable ctx,
                                 Object entryResult) {
-        if (entryResult instanceof Scriptable obj
-                && ScriptableObject.getProperty(obj, "next") instanceof Function) {
-            // 从 Java 直接调 g.next() 会被 Rhino 拒绝（恢复生成器必须经过脚本激活帧），
-            // 所以这里编译一个单行 JS 函数作为转接。
-            Function helper = (Function) cx.evaluateString(scope,
-                    "(function(g, v){ return g.next(v); })", "resume", 1, null);
-            return new RunningScript(id, scope, ctx, obj, helper);
+        if (!(entryResult instanceof Scriptable obj)
+                || !(ScriptableObject.getProperty(obj, "next") instanceof Function)) {
+            throw new CompiledScript.CompileException(id + ": 入口 main 必须是 generator 函数（function* main(ctx)）");
         }
-        // 编译期已经保证入口是 generator，这里只是防御：非生成器视为当场结束。
-        RunningScript done = new RunningScript(id, scope, ctx, null, null);
-        done.state = State.COMPLETED;
-        return done;
+        // 从 Java 直接调 g.next() 会被 Rhino 拒绝（恢复生成器必须经过脚本激活帧），
+        // 所以这里编译一个单行 JS 函数作为转接。
+        Function helper = (Function) cx.evaluateString(scope,
+                "(function(g, v){ return g.next(v); })", "resume", 1, null);
+        return new RunningScript(id, scope, ctx, obj, helper);
     }
 
     @Override
@@ -88,7 +86,7 @@ public final class RunningScript implements RunHandle {
             Object outcome;
             try {
                 outcome = Sandbox.call(budget, cx -> {
-                    ScriptContextObject.setTick(ctx, now);
+                    ScriptContextFactory.setTick(ctx, now);
                     return resume.call(cx, scope, scope, new Object[]{generator, Undefined.instance});
                 });
             } catch (Sandbox.ScriptBudgetExceededException e) {
@@ -105,14 +103,18 @@ public final class RunningScript implements RunHandle {
                     return;
                 }
                 Object value = ScriptableObject.getProperty(out, "value");
+                if (value == Undefined.instance) {
+                    resumeAt = now + 1;
+                    return;
+                }
                 if (value instanceof Scriptable awaited && ScriptableObject.hasProperty(awaited, "wait")) {
                     double ticks = Context.toNumber(ScriptableObject.getProperty(awaited, "wait"));
-                    long delay = Double.isNaN(ticks) || ticks < 0 ? 1 : (long) Math.ceil(ticks);
-                    resumeAt = now + Math.max(delay, 0);
-                    if (resumeAt > now) {
+                    if (!Double.isFinite(ticks) || ticks < 1) {
+                        fail(new IllegalStateException("ctx.wait(n) 需要正的 tick 数"));
                         return;
                     }
-                    continue;
+                    resumeAt = now + Math.min((long) Math.ceil(ticks), MAX_WAIT);
+                    return;
                 }
                 if (value instanceof Scriptable awaited && ScriptableObject.hasProperty(awaited, "join")) {
                     Object child = ScriptableObject.getProperty(awaited, "join");
@@ -124,9 +126,12 @@ public final class RunningScript implements RunHandle {
                         return;
                     }
                 }
+                fail(new IllegalStateException("未知的 yield 值：" + Context.toString(value)
+                        + "；等待请用 ctx.wait(n)，等待子脚本请 yield ctx.run(...)"));
+                return;
             }
-            // yield 出来的是不认识的指令：下一 tick 再试，避免同 tick 空转。
-            resumeAt = now + 1;
+            fail(new IllegalStateException("生成器返回了非对象结果：" + Context.toString(outcome)));
+            return;
         }
         if (steps >= MAX_STEPS_PER_TICK) {
             resumeAt = now + 1;

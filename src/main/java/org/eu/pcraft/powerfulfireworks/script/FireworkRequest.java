@@ -19,7 +19,9 @@ import java.util.List;
  * @param offsetY      相对原点的垂直偏移
  * @param offsetZ      相对原点的水平偏移
  * @param launchChance 发射声的播放概率
- * @param fuse         从升空到爆炸的 tick 数；到点后由宿主发爆炸包并清掉实体
+ * @param explosionChance 爆炸声的播放概率
+ * @param fuse         从升空到爆炸的 tick 数；到点后由宿主发爆炸包并清掉实体。
+ *                     可见性由脚本负责：超出观看者 64 格渲染范围时宿主只告警、不裁剪
  */
 public record FireworkRequest(
         int count,
@@ -34,6 +36,7 @@ public record FireworkRequest(
         double offsetY,
         double offsetZ,
         double launchChance,
+        double explosionChance,
         int fuse) implements Emission {
 
     /** 原版存在的五种爆炸形状。 */
@@ -48,6 +51,9 @@ public record FireworkRequest(
         }
         if (launchChance < 0 || launchChance > 1) {
             throw new IllegalArgumentException("launchChance 必须在 0..1 之间，当前 " + launchChance);
+        }
+        if (explosionChance < 0 || explosionChance > 1) {
+            throw new IllegalArgumentException("explosionChance 必须在 0..1 之间，当前 " + explosionChance);
         }
         if (fuse < 1 || fuse > 200) {
             throw new IllegalArgumentException("fuse 必须在 1..200 之间，当前 " + fuse);

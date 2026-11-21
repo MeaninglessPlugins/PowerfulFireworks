@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Node;
@@ -24,7 +25,7 @@ import org.mozilla.javascript.ast.VariableInitializer;
  * 顶层 {@code var}/{@code let}/{@code const} 因此各次运行互不影响；标准内置对象（{@code Math}、
  * {@code JSON} 等）通过原型链共享，不重复构造。
  *
- * <p>参数契约由定义目录的 manifest {@code inputs} 提供，脚本自己不声明。
+ * <p>参数由调用方通过 {@link #start} 或 {@code ctx.run} 传入，脚本从 {@code ctx.params} 读取。
  */
 public final class CompiledScript {
 
@@ -34,16 +35,14 @@ public final class CompiledScript {
     /**
      * 加载期默认指令预算。
      *
-     * <p>编译只做解析，几乎不执行指令；这个预算是给"编译期间意外执行了东西"兜底的，
-     * 典型的解析开销只占其中极小一部分。需要更紧或更松的值由调用方通过重载传入。
+     * <p>编译只做解析，几乎不执行指令；这个预算是给"编译期间意外执行了东西"兜底的。
      */
-    public static final long DEFAULT_LOAD_BUDGET = 2_000_000L;
+    private static final long DEFAULT_LOAD_BUDGET = 2_000_000L;
 
     /**
      * 单次启动的指令上限。
      *
-     * <p>启动要真正执行一遍脚本顶层（建查表、算常量等），比编译重得多，所以单独给一份额度；
-     * 将来接入执行引擎后，这份开销应计入每 tick 预算。
+     * <p>启动要真正执行一遍脚本顶层（建查表、算常量等），比编译重得多，所以单独给一份额度。
      */
     private static final long START_BUDGET = 200_000L;
 
@@ -62,23 +61,11 @@ public final class CompiledScript {
     }
 
     public static CompiledScript compile(String id, String source) {
-        return compile(id, source, DEFAULT_LOAD_BUDGET);
-    }
-
-    /**
-     * 按指定指令预算编译。
-     *
-     * @param instructionBudget 单次编译允许执行的最大指令数，必须为正数
-     */
-    public static CompiledScript compile(String id, String source, long instructionBudget) {
         if (source == null || source.isBlank()) {
             throw new CompileException(id + ": 脚本内容为空");
         }
-        if (instructionBudget <= 0) {
-            throw new IllegalArgumentException("instructionBudget 必须为正数: " + instructionBudget);
-        }
         checkEntryShape(id, source);
-        return Sandbox.call(new Sandbox.ScriptBudget(instructionBudget), cx -> {
+        return Sandbox.call(new Sandbox.ScriptBudget(DEFAULT_LOAD_BUDGET), cx -> {
             Script compiled;
             try {
                 compiled = cx.compileString(source, id, 1, null);
@@ -96,11 +83,12 @@ public final class CompiledScript {
      *
      * @param host   脚本说话的唯一出口
      * @param starter 启动子脚本的入口，已绑定到这次运行
-     * @param params 已按 schema 合并、校验并冻结的参数（调用方负责）
+     * @param params 参数对象，原样暴露为 {@code ctx.params}；{@code null} 视为空
      * @param seed   随机种子；同一种子与同一入参应当产生相同结果
      */
     public RunningScript start(ScriptHost host, RunStarter starter, Map<String, Object> params, long seed) {
         Map<String, Object> safeParams = params == null ? new HashMap<>() : new HashMap<>(params);
+        host.seed(seed);
         Random random = new Random(seed);
 
         return Sandbox.call(new Sandbox.ScriptBudget(START_BUDGET), cx -> {
@@ -118,8 +106,8 @@ public final class CompiledScript {
             if (!(value instanceof Function entry)) {
                 throw new CompileException(id + ": 没有入口函数，脚本必须定义 function* main(ctx)");
             }
-            Scriptable paramObj = ScriptContextObject.paramsObject(cx, scope, safeParams);
-            Scriptable ctx = ScriptContextObject.create(cx, scope, host, starter, paramObj, random);
+            Scriptable paramObj = ScriptContextFactory.paramsObject(cx, scope, safeParams);
+            Scriptable ctx = ScriptContextFactory.create(cx, scope, host, starter, paramObj, random);
             Object result;
             try {
                 // 契约入口只有一个参数；参数通过 ctx.params 读取。
@@ -140,7 +128,9 @@ public final class CompiledScript {
     private static void checkEntryShape(String id, String source) {
         AstRoot root;
         try {
-            root = new Parser().parse(source, id, 1);
+            CompilerEnvirons env = new CompilerEnvirons();
+            env.setLanguageVersion(Context.VERSION_ES6);
+            root = new Parser(env).parse(source, id, 1);
         } catch (RuntimeException e) {
             return;
         }

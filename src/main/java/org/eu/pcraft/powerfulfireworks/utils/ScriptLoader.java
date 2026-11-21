@@ -78,11 +78,11 @@ public final class ScriptLoader {
             try {
                 loaded.put(id, CompiledScript.compile(id, Files.readString(file, StandardCharsets.UTF_8)));
             } catch (CompiledScript.CompileException e) {
-                reporter.add(SOURCE, List.of(new ConfigIssue(IssueLevel.WARN, fileName,
+                reporter.add(SOURCE, List.of(new ConfigIssue(IssueLevel.ERROR, fileName,
                         "脚本编译失败，不会运行：" + e.getMessage(),
                         "检查语法与入口定义")));
             } catch (IOException e) {
-                reporter.add(SOURCE, List.of(new ConfigIssue(IssueLevel.WARN, fileName,
+                reporter.add(SOURCE, List.of(new ConfigIssue(IssueLevel.ERROR, fileName,
                         "脚本读取失败，不会运行：" + e.getMessage(),
                         "确认文件权限")));
             }

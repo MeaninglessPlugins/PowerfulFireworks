@@ -42,8 +42,9 @@ plugins/PowerfulFireworks/
 ├── config.yml       # 主配置
 ├── fonts/           # BDF 点阵字体
 │   └── example.bdf
-└── fireworks/       # 每份 yml 编译成一场演出
-    └── example.yml
+├── fireworks/       # 每份 yml 编译成一场演出
+│   └── example.yml
+└── scripts/         # 可选：JS 脚本演出
 ```
 
 ## 命令
@@ -58,6 +59,8 @@ plugins/PowerfulFireworks/
 | `/fireworks toggle` | 开关自己的随机烟花 |
 | `/fireworks reload` | 重载配置与演出 |
 | `/fireworks check` | 只校验配置，不重载也不写文件 |
+| `/fireworks script run <脚本> [seed]` | 以自己为原点运行一次脚本演出 |
+| `/fireworks stop` | 停止所有正在跑的脚本演出 |
 | `/firework-test` | 用手上的烟花试放一个假烟花实体（调试用） |
 
 ## 权限
@@ -73,12 +76,15 @@ plugins/PowerfulFireworks/
 | `powerfulfireworks.cmd.fireworks.toggle` | `/fireworks toggle` |
 | `powerfulfireworks.cmd.fireworks.reload` | `/fireworks reload` |
 | `powerfulfireworks.cmd.fireworks.check` | `/fireworks check` |
+| `powerfulfireworks.cmd.fireworks.script` | `/fireworks script` |
+| `powerfulfireworks.cmd.fireworks.stop` | `/fireworks stop` |
 | `powerfulfireworks.cmd.test` | `/firework-test` |
 
 ## 文档
 
 - [config.yml 配置项](docs/configuration.md)
 - [演出与节点（fireworks/*.yml）](docs/schedulers.md)
+- [脚本（scripts/*.js）](docs/scripts.md)
 - [点阵字体（BDF）](docs/configuration.md#字体)
 
 ## 从源码构建
